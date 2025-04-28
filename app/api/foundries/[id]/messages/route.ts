@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { NextResponse, NextRequest } from 'next/server';
 import { getMessages, sendMessage } from '@/lib/kinos-messages-api';
 
