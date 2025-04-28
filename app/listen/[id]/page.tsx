@@ -137,38 +137,72 @@ export default function ListenPage() {
           });
         }
         
-        // Store the current track ID and playback state before updating
+        // Store the current track ID, URL, and playback state before updating
         const currentTrackId = currentTrack?.id;
+        const currentTrackUrl = currentTrack?.url;
         const wasPlaying = isPlaying;
         const currentPlaybackTime = audioRef.current?.currentTime || 0;
         
         // Update tracks list without changing the current track
-        setTracks(data);
+        setTracks(prevTracks => {
+          // Merge new tracks with existing ones, preserving the current track
+          if (currentTrackId) {
+            // Find the current track in the new data
+            const updatedCurrentTrack = data.find((track: Track) => track.id === currentTrackId);
+            
+            // If the current track exists in the new data but has a different URL,
+            // we need to handle this special case
+            if (updatedCurrentTrack && updatedCurrentTrack.url !== currentTrackUrl) {
+              console.log(`[UI] Current track URL changed from ${currentTrackUrl} to ${updatedCurrentTrack.url}`);
+              // We'll handle this after the state update
+            }
+          }
+          return data;
+        });
         
         // If we had a current track, find and restore it in the new tracks list
         if (currentTrackId) {
           const updatedCurrentTrack = data.find((track: Track) => track.id === currentTrackId);
           if (updatedCurrentTrack) {
-            // Update the current track with the latest data, but don't reset playback
-            setCurrentTrack(prev => {
-              // Only update if the URL has changed
-              if (prev?.url !== updatedCurrentTrack.url) {
-                return updatedCurrentTrack;
-              }
-              return prev; // Keep the same object reference if URL hasn't changed
-            });
-            
-            // If the audio element exists and the URL changed, we need to restore playback state
-            if (audioRef.current && currentTrack?.url !== updatedCurrentTrack.url) {
-              // Set the new source
-              audioRef.current.src = updatedCurrentTrack.url;
-              // Restore playback position
-              audioRef.current.currentTime = currentPlaybackTime;
-              // Restore play/pause state
-              if (wasPlaying) {
-                audioRef.current.play().catch(err => {
-                  console.error('Error resuming playback after track update:', err);
+            // Only update the current track reference if necessary, but don't change the audio element yet
+            if (updatedCurrentTrack.url !== currentTrackUrl) {
+              console.log(`[UI] Updating current track with new URL: ${updatedCurrentTrack.url}`);
+              // Update the current track but don't reset the audio element yet
+              setCurrentTrack(updatedCurrentTrack);
+              
+              // We need to manually update the audio source without interrupting playback
+              if (audioRef.current) {
+                // Store the current state
+                const wasPlaying = !audioRef.current.paused;
+                
+                // Create a new Audio element to preload the new source
+                const newAudio = new Audio();
+                newAudio.src = updatedCurrentTrack.url;
+                
+                // When the new audio is ready, update the current audio element
+                newAudio.addEventListener('canplaythrough', () => {
+                  if (audioRef.current) {
+                    // Save current position
+                    const currentTime = audioRef.current.currentTime;
+                    
+                    // Update source
+                    audioRef.current.src = updatedCurrentTrack.url;
+                    audioRef.current.load();
+                    
+                    // Restore position
+                    audioRef.current.currentTime = currentTime;
+                    
+                    // Resume playback if it was playing
+                    if (wasPlaying) {
+                      audioRef.current.play().catch(err => {
+                        console.error('Error resuming playback after URL update:', err);
+                      });
+                    }
+                  }
                 });
+                
+                // Start loading the new audio
+                newAudio.load();
               }
             }
           }
