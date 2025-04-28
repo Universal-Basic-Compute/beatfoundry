@@ -508,7 +508,6 @@ export default function ListenPage() {
     console.log(`[UI] Creating track for foundry ID: ${foundryId}`);
     console.log(`[UI] Message content: ${newMessage}`);
     console.log(`[UI] Instrumental: ${instrumental}`);
-    console.log(`[UI] Concept mode: ${conceptMode}`);
     
     // Store the message content before clearing it
     const messageContent = newMessage;
