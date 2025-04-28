@@ -341,9 +341,9 @@ export default function ListenPage() {
                   
                   <h3 className="font-semibold mb-2">Track List</h3>
                   <div className="space-y-2">
-                    {tracks.map(track => (
+                    {tracks.map((track, index) => (
                       <div 
-                        key={track.id}
+                        key={track.id || `track-${index}`}
                         className={`p-3 rounded-lg cursor-pointer hover:bg-black/10 dark:hover:bg-white/10 ${
                           currentTrack?.id === track.id ? 'bg-black/10 dark:bg-white/10' : ''
                         }`}
