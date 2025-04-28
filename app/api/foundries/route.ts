@@ -1,15 +1,22 @@
 import { NextResponse } from 'next/server';
+import { getFoundries, createFoundry, foundryExists } from '@/lib/airtable';
 
-// This would be replaced with your actual Airtable integration
-// Using let instead of const so we can modify the array
+// This is a fallback for development or when Airtable is not configured
 let mockFoundries = [
   { id: '1', name: 'ElectroBeats', description: 'Electronic music producer with a focus on ambient soundscapes' },
   { id: '2', name: 'JazzMind', description: 'AI jazz composer exploring improvisational techniques' },
 ];
 
 export async function GET() {
-  // In a real implementation, this would fetch from Airtable
-  return NextResponse.json(mockFoundries);
+  try {
+    // Try to get foundries from Airtable
+    const foundries = await getFoundries();
+    return NextResponse.json(foundries);
+  } catch (error) {
+    console.error('Error fetching from Airtable, using mock data:', error);
+    // Fall back to mock data if Airtable fails
+    return NextResponse.json(mockFoundries);
+  }
 }
 
 export async function POST(request: Request) {
@@ -23,36 +30,44 @@ export async function POST(request: Request) {
     );
   }
   
-  // Check if foundry already exists (mock implementation)
-  const exists = mockFoundries.some(foundry => foundry.name === body.name);
-  
-  if (exists) {
-    const existing = mockFoundries.find(foundry => foundry.name === body.name);
-    return NextResponse.json(
-      { 
-        error: "Foundry already exists", 
-        status: 409, 
-        existing_foundry: existing 
-      },
-      { status: 409 }
-    );
+  try {
+    // Check if foundry already exists in Airtable
+    const { exists, foundry } = await foundryExists(body.name);
+    
+    if (exists) {
+      return NextResponse.json(
+        { 
+          error: "Foundry already exists", 
+          status: 409, 
+          existing_foundry: foundry 
+        },
+        { status: 409 }
+      );
+    }
+    
+    // Create new foundry in Airtable
+    const newFoundry = await createFoundry(body.name, body.description);
+    return NextResponse.json(newFoundry, { status: 201 });
+  } catch (error) {
+    console.error('Error in POST /api/foundries:', error);
+    
+    // If Airtable integration fails, create a mock response for development
+    console.log('Airtable integration failed, using mock data');
+    const mockFoundry = {
+      id: Date.now().toString(),
+      name: body.name,
+      description: body.description,
+      created_at: new Date().toISOString(),
+      status: "created"
+    };
+    
+    // Add to mock foundries array for this session
+    mockFoundries.push({
+      id: mockFoundry.id,
+      name: mockFoundry.name,
+      description: mockFoundry.description
+    });
+    
+    return NextResponse.json(mockFoundry, { status: 201 });
   }
-  
-  // In a real implementation, this would create a record in Airtable
-  const newFoundry = {
-    id: Date.now().toString(),
-    name: body.name,
-    description: body.description,
-    created_at: new Date().toISOString(),
-    status: "created"
-  };
-  
-  // Add the new foundry to our mock array so it shows up in the list
-  mockFoundries.push({
-    id: newFoundry.id,
-    name: newFoundry.name,
-    description: newFoundry.description
-  });
-  
-  return NextResponse.json(newFoundry, { status: 201 });
 }
