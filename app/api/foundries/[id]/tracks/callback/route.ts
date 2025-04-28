@@ -94,6 +94,44 @@ export async function POST(request, { params }) {
               console.log(`[CALLBACK] - Track ID: ${createdTrack.id}`);
               console.log(`[CALLBACK] - Track Name: ${createdTrack.name}`);
               console.log(`[CALLBACK] - Track URL saved to Airtable: ${createdTrack.url}`);
+              
+              // Generate a cover image for the track
+              try {
+                console.log(`[CALLBACK] Generating cover image for track: ${createdTrack.id}`);
+                
+                // Create a prompt for the cover image based on the track details
+                const coverPrompt = `Album cover art for a song titled "${uniqueTitle}". ${
+                  prompt ? `The music is described as: ${prompt}` : ''
+                }. Create a visually striking, professional album cover that captures the essence of the music.`;
+                
+                console.log(`[CALLBACK] Cover image prompt: "${coverPrompt}"`);
+                
+                // Determine the base URL for the API call
+                const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 
+                              (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://beatfoundry.vercel.app');
+                
+                const coverResponse = await fetch(`${baseUrl}/api/foundries/${foundryId}/images`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    trackId: createdTrack.id,
+                    prompt: coverPrompt,
+                    title: uniqueTitle
+                  }),
+                });
+                
+                if (!coverResponse.ok) {
+                  console.error(`[CALLBACK] Error generating cover image:`, await coverResponse.text());
+                } else {
+                  const coverData = await coverResponse.json();
+                  console.log(`[CALLBACK] Successfully generated cover image: ${coverData.cover_url}`);
+                }
+              } catch (coverError) {
+                console.error(`[CALLBACK] Error generating cover image:`, coverError);
+                // Continue anyway, the cover is optional
+              }
             }
             
             // Download the track

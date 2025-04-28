@@ -196,12 +196,46 @@ export async function updateTrackUrl(trackId: string, newUrl: string) {
       prompt: updatedRecord[0].get('Prompt') as string,
       lyrics: updatedRecord[0].get('Lyrics') as string,
       url: updatedRecord[0].get('Url') as string,
+      cover: updatedRecord[0].get('Cover') as string,
       createdAt: updatedRecord[0].get('CreatedAt') as string,
       foundryId: updatedRecord[0].get('FoundryId') as string,
       taskId: updatedRecord[0].get('TaskId') as string,
     };
   } catch (error) {
     console.error('[AIRTABLE] Error updating track URL in Airtable:', error);
+    throw error;
+  }
+}
+
+export async function updateTrackCover(trackId: string, coverUrl: string) {
+  console.log(`[AIRTABLE] Updating track cover for track ID: ${trackId}`);
+  console.log(`[AIRTABLE] New cover URL: ${coverUrl}`);
+  
+  try {
+    const updatedRecord = await trackTable.update([
+      {
+        id: trackId,
+        fields: {
+          Cover: coverUrl,
+        },
+      },
+    ]);
+    
+    console.log(`[AIRTABLE] Track cover updated successfully: ${updatedRecord[0].id}`);
+    
+    return {
+      id: updatedRecord[0].id,
+      name: updatedRecord[0].get('Name') as string,
+      prompt: updatedRecord[0].get('Prompt') as string,
+      lyrics: updatedRecord[0].get('Lyrics') as string,
+      url: updatedRecord[0].get('Url') as string,
+      cover: updatedRecord[0].get('Cover') as string,
+      createdAt: updatedRecord[0].get('CreatedAt') as string,
+      foundryId: updatedRecord[0].get('FoundryId') as string,
+      taskId: updatedRecord[0].get('TaskId') as string,
+    };
+  } catch (error) {
+    console.error('[AIRTABLE] Error updating track cover in Airtable:', error);
     throw error;
   }
 }
@@ -363,6 +397,7 @@ export async function getTracksByFoundryId(foundryId: string) {
         prompt: record.get('Prompt') as string,
         lyrics: record.get('Lyrics') as string,
         url: record.get('Url') as string,
+        cover: record.get('Cover') as string,
         createdAt: record.get('CreatedAt') as string,
         foundryId: record.get('FoundryId') as string,
         reactions: reactions,

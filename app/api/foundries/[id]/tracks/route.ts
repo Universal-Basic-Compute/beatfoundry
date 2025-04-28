@@ -218,6 +218,51 @@ export async function POST(request, { params }) {
             taskId // Save the taskId
           );
           console.log(`[TRACKS] Created placeholder track in Airtable:`, placeholderTrack);
+          
+          // Generate a cover image for the track
+          try {
+            console.log(`[TRACKS] Generating cover image for track: ${placeholderTrack.id}`);
+            
+            // Create a prompt for the cover image based on the music parameters
+            const coverPrompt = `Album cover art for a ${musicParams.style} song titled "${musicParams.title}". ${
+              musicParams.prompt ? `The music is described as: ${musicParams.prompt}` : ''
+            }. Create a visually striking, professional album cover that captures the essence of the music.`;
+            
+            console.log(`[TRACKS] Cover image prompt: "${coverPrompt}"`);
+            
+            // Determine the base URL for the API call
+            let baseUrl;
+            if (process.env.NODE_ENV === 'production') {
+              baseUrl = 'https://beatfoundry.vercel.app';
+            } else {
+              // For development, use the server's URL
+              const host = request.headers.get('host');
+              const protocol = host?.includes('localhost') ? 'http' : 'https';
+              baseUrl = `${protocol}://${host}`;
+            }
+            
+            const coverResponse = await fetch(`${baseUrl}/api/foundries/${foundryId}/images`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                trackId: placeholderTrack.id,
+                prompt: coverPrompt,
+                title: musicParams.title
+              }),
+            });
+            
+            if (!coverResponse.ok) {
+              console.error(`[TRACKS] Error generating cover image:`, await coverResponse.text());
+            } else {
+              const coverData = await coverResponse.json();
+              console.log(`[TRACKS] Successfully generated cover image: ${coverData.cover_url}`);
+            }
+          } catch (coverError) {
+            console.error(`[TRACKS] Error generating cover image:`, coverError);
+            // Continue anyway, the cover is optional
+          }
         } catch (airtableError) {
           console.error(`[TRACKS] Error creating placeholder track in Airtable:`, airtableError);
           // Continue anyway, don't fail the request

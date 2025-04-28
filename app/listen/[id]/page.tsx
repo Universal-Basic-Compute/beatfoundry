@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import ReactMarkdown from 'react-markdown';
 
 // Debounce utility to prevent multiple track creations
@@ -40,6 +41,7 @@ type Track = {
   prompt: string;
   lyrics: string;
   url: string;
+  cover?: string;
   createdAt: string;
   foundryId: string;
   reactions?: {
@@ -53,6 +55,7 @@ type Track = {
     '🔁'?: number;
     '🌟'?: number;
     '📈'?: number;
+    '❌'?: number;
   };
 };
 
@@ -1254,8 +1257,18 @@ export default function ListenPage() {
                   <div className="text-center mb-6">
                     <div className="relative w-48 h-48 mx-auto mb-8">
                       <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-accent/20 rounded-full"></div>
-                      <div className="w-full h-full bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center shadow-lg">
-                        <span className="text-5xl">🎵</span>
+                      <div className="w-full h-full bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center shadow-lg overflow-hidden">
+                        {currentTrack?.cover ? (
+                          <Image 
+                            src={currentTrack.cover} 
+                            alt={currentTrack.name} 
+                            width={192} 
+                            height={192} 
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-5xl">🎵</span>
+                        )}
                       </div>
                       {/* Add a spinning animation when playing */}
                       {isPlaying && (
@@ -1346,21 +1359,38 @@ export default function ListenPage() {
                       >
                         <div className="flex justify-between items-start">
                           <div 
-                            className="flex-1 cursor-pointer" 
+                            className="flex-1 cursor-pointer flex items-center" 
                             onClick={() => playTrack(track)}
                           >
-                            <div className="font-medium flex items-center">
-                              {currentTrack?.id === track.id && (
-                                <span className="mr-2 text-primary">
-                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none">
-                                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                                  </svg>
-                                </span>
+                            <div className="w-10 h-10 rounded-md overflow-hidden mr-3 flex-shrink-0">
+                              {track.cover ? (
+                                <Image 
+                                  src={track.cover} 
+                                  alt={track.name} 
+                                  width={40} 
+                                  height={40} 
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full bg-primary/10 flex items-center justify-center">
+                                  <span className="text-lg">🎵</span>
+                                </div>
                               )}
-                              {track.name}
                             </div>
-                            <div className="text-sm text-muted-foreground mt-1">
-                              {new Date(track.createdAt).toLocaleDateString()}
+                            <div>
+                              <div className="font-medium flex items-center">
+                                {currentTrack?.id === track.id && (
+                                  <span className="mr-2 text-primary">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                                      <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                    </svg>
+                                  </span>
+                                )}
+                                {track.name}
+                              </div>
+                              <div className="text-sm text-muted-foreground mt-1">
+                                {new Date(track.createdAt).toLocaleDateString()}
+                              </div>
                             </div>
                           </div>
                           
