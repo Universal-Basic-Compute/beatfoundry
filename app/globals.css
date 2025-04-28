@@ -1,26 +1,134 @@
 @import "tailwindcss";
 
 :root {
+  /* Base colors */
   --background: #ffffff;
   --foreground: #171717;
+  
+  /* Primary colors */
+  --primary: #6366f1; /* Indigo-500 */
+  --primary-foreground: #ffffff;
+  
+  /* Secondary colors */
+  --secondary: #8b5cf6; /* Violet-500 */
+  --secondary-foreground: #ffffff;
+  
+  /* Accent colors */
+  --accent: #ec4899; /* Pink-500 */
+  --accent-foreground: #ffffff;
+  
+  /* UI colors */
+  --card: #ffffff;
+  --card-foreground: #171717;
+  --popover: #ffffff;
+  --popover-foreground: #171717;
+  --muted: #f3f4f6; /* Gray-100 */
+  --muted-foreground: #6b7280; /* Gray-500 */
+  
+  /* Border and input colors */
+  --border: #e5e7eb; /* Gray-200 */
+  --input: #e5e7eb; /* Gray-200 */
+  
+  /* Feedback colors */
+  --success: #10b981; /* Emerald-500 */
+  --warning: #f59e0b; /* Amber-500 */
+  --destructive: #ef4444; /* Red-500 */
+  --destructive-foreground: #ffffff;
+  
+  /* Radius and shadows */
+  --radius: 0.5rem;
+  --ring: #6366f1; /* Indigo-500 */
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-secondary: var(--secondary);
+  --color-accent: var(--accent);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
+    /* Base colors */
     --background: #0a0a0a;
     --foreground: #ededed;
+    
+    /* Primary colors */
+    --primary: #818cf8; /* Indigo-400 */
+    --primary-foreground: #030712; /* Gray-950 */
+    
+    /* Secondary colors */
+    --secondary: #a78bfa; /* Violet-400 */
+    --secondary-foreground: #030712; /* Gray-950 */
+    
+    /* Accent colors */
+    --accent: #f472b6; /* Pink-400 */
+    --accent-foreground: #030712; /* Gray-950 */
+    
+    /* UI colors */
+    --card: #171717; /* Gray-900 */
+    --card-foreground: #ededed;
+    --popover: #171717; /* Gray-900 */
+    --popover-foreground: #ededed;
+    --muted: #262626; /* Gray-800 */
+    --muted-foreground: #a1a1aa; /* Zinc-400 */
+    
+    /* Border and input colors */
+    --border: #262626; /* Gray-800 */
+    --input: #262626; /* Gray-800 */
+    
+    /* Feedback colors */
+    --success: #34d399; /* Emerald-400 */
+    --warning: #fbbf24; /* Amber-400 */
+    --destructive: #f87171; /* Red-400 */
+    --destructive-foreground: #030712; /* Gray-950 */
+    
+    /* Radius and shadows */
+    --ring: #818cf8; /* Indigo-400 */
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+/* Add some utility classes for the new color scheme */
+.bg-primary {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.bg-secondary {
+  background-color: var(--secondary);
+  color: var(--secondary-foreground);
+}
+
+.bg-accent {
+  background-color: var(--accent);
+  color: var(--accent-foreground);
+}
+
+.text-primary {
+  color: var(--primary);
+}
+
+.text-secondary {
+  color: var(--secondary);
+}
+
+.text-accent {
+  color: var(--accent);
+}
+
+.border-primary {
+  border-color: var(--primary);
+}
+
+.ring-primary {
+  --tw-ring-color: var(--primary);
 }
