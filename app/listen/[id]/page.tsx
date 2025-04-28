@@ -5,6 +5,22 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
 
+// Debounce utility to prevent multiple track creations
+const useDebounce = (func, delay) => {
+  const debounceRef = useRef(null);
+  
+  return (...args) => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+    
+    debounceRef.current = setTimeout(() => {
+      func(...args);
+      debounceRef.current = null;
+    }, delay);
+  };
+};
+
 type Message = {
   id: string;
   role: 'user' | 'assistant';
@@ -38,6 +54,8 @@ export default function ListenPage() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Add a ref to track the last initiative we processed
+  const lastInitiativeRef = useRef<string | null>(null);
   // Track multiple pending generations instead of a single one
   const [pendingGenerations, setPendingGenerations] = useState<Array<{
     id: string;
@@ -423,10 +441,17 @@ export default function ListenPage() {
     return null;
   };
 
+  // Create a debounced version of createTrackFromThinking
+  const debouncedCreateTrack = useDebounce((prompt) => {
+    if (prompt && prompt.trim() !== '') {
+      createTrackFromThinking(prompt);
+    }
+  }, 2000);
+
   // Add a function to create a track from thinking results
   const createTrackFromThinking = async (prompt: string) => {
-    if (!prompt) {
-      console.error('[UI] Cannot create track: prompt is empty');
+    if (!prompt || prompt.trim() === '') {
+      console.error('[UI] Cannot create track: prompt is empty or invalid');
       return;
     }
     
@@ -583,7 +608,27 @@ export default function ListenPage() {
             
             // Check if this is the initiative step
             if (data.step === 'initiative') {
-              console.log('[UI] Initiative step received, creating track');
+              console.log('[UI] Initiative step received, checking content');
+              
+              // Validate the initiative content
+              if (!data.content) {
+                console.log('[UI] Initiative has null content, skipping track creation');
+                return newThoughts;
+              }
+              
+              // Create a string representation of the content for comparison
+              const contentString = typeof data.content === 'string' 
+                ? data.content 
+                : JSON.stringify(data.content);
+              
+              // Check if this is a duplicate initiative
+              if (lastInitiativeRef.current === contentString) {
+                console.log('[UI] Duplicate initiative detected, skipping track creation');
+                return newThoughts;
+              }
+              
+              // Store this initiative as the last one we've seen
+              lastInitiativeRef.current = contentString;
               
               // Create a prompt from the initiative
               const initiativeContent = typeof data.content === 'string' 
@@ -594,10 +639,8 @@ export default function ListenPage() {
               
               console.log('[UI] Created prompt from initiative:', prompt);
               
-              // Create the track with a slight delay to ensure UI updates first
-              setTimeout(() => {
-                createTrackFromThinking(prompt);
-              }, 500);
+              // Use the debounced function to create the track
+              debouncedCreateTrack(prompt);
             }
             
             return newThoughts;
