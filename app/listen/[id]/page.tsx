@@ -219,13 +219,11 @@ export default function ListenPage() {
     
     fetchTracks();
     
-    // Set up polling to check for new tracks every 30 seconds
-    const intervalId = setInterval(fetchTracks, 30000);
+    // No longer polling for tracks every 30 seconds
     
     return () => {
       console.log(`[UI] Cleaning up intervals in useEffect`);
-      clearInterval(intervalId);
-      // Also clear the polling interval for task status if it exists
+      // Only clear the polling interval for task status if it exists
       if (pollingInterval) {
         console.log(`[UI] Clearing polling interval in cleanup`);
         clearInterval(pollingInterval);
