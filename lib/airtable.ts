@@ -16,6 +16,20 @@ const foundryTable = base('FOUNDRIES');
 // Get the TRACKS table
 const trackTable = base('TRACKS');
 
+// Add this type definition for track reactions
+export type TrackReactions = {
+  '⭐'?: number; // Quality rating
+  '🎵'?: number; // Melody focus
+  '🥁'?: number; // Rhythm focus
+  '🔊'?: number; // Production quality
+  '📝'?: number; // Needs work/revision
+  '❓'?: number; // Confusion/question
+  '💡'?: number; // Innovative idea
+  '🔁'?: number; // Repetitive
+  '🌟'?: number; // Standout track
+  '📈'?: number; // Showing improvement/growth
+};
+
 export async function getFoundries() {
   try {
     const records = await foundryTable.select().all();
@@ -241,6 +255,75 @@ export async function updateTrackByTaskId(taskId: string, audioUrl: string) {
   }
 }
 
+export async function getTrackReactions(trackId: string): Promise<TrackReactions> {
+  console.log(`[AIRTABLE] Getting reactions for track ID: ${trackId}`);
+  
+  try {
+    const record = await trackTable.find(trackId);
+    const reactionsField = record.get('Reactions');
+    
+    // If the field exists and is a string, parse it as JSON
+    if (reactionsField && typeof reactionsField === 'string') {
+      try {
+        return JSON.parse(reactionsField);
+      } catch (parseError) {
+        console.error('[AIRTABLE] Error parsing reactions JSON:', parseError);
+        return {};
+      }
+    }
+    
+    // If the field exists and is already an object, return it
+    if (reactionsField && typeof reactionsField === 'object') {
+      return reactionsField as TrackReactions;
+    }
+    
+    // If the field doesn't exist or is empty, return an empty object
+    return {};
+  } catch (error) {
+    console.error('[AIRTABLE] Error getting track reactions:', error);
+    throw error;
+  }
+}
+
+export async function updateTrackReactions(trackId: string, reactions: TrackReactions): Promise<TrackReactions> {
+  console.log(`[AIRTABLE] Updating reactions for track ID: ${trackId}`);
+  console.log(`[AIRTABLE] New reactions:`, reactions);
+  
+  try {
+    const updatedRecord = await trackTable.update([
+      {
+        id: trackId,
+        fields: {
+          Reactions: JSON.stringify(reactions),
+        },
+      },
+    ]);
+    
+    const updatedReactions = updatedRecord[0].get('Reactions');
+    
+    // Parse the reactions if they're stored as a string
+    if (typeof updatedReactions === 'string') {
+      try {
+        return JSON.parse(updatedReactions);
+      } catch (parseError) {
+        console.error('[AIRTABLE] Error parsing updated reactions JSON:', parseError);
+        return reactions; // Return the input reactions as a fallback
+      }
+    }
+    
+    // If the reactions are already an object, return them
+    if (typeof updatedReactions === 'object') {
+      return updatedReactions as TrackReactions;
+    }
+    
+    // If all else fails, return the input reactions
+    return reactions;
+  } catch (error) {
+    console.error('[AIRTABLE] Error updating track reactions:', error);
+    throw error;
+  }
+}
+
 export async function getTracksByFoundryId(foundryId: string) {
   console.log(`[AIRTABLE] Fetching tracks for foundry ID: ${foundryId}`);
   
@@ -255,15 +338,35 @@ export async function getTracksByFoundryId(foundryId: string) {
     
     console.log(`[AIRTABLE] Found ${records.length} tracks for foundry ID: ${foundryId}`);
     
-    const tracks = records.map(record => ({
-      id: record.id,
-      name: record.get('Name') as string,
-      prompt: record.get('Prompt') as string,
-      lyrics: record.get('Lyrics') as string,
-      url: record.get('Url') as string,
-      createdAt: record.get('CreatedAt') as string,
-      foundryId: record.get('FoundryId') as string,
-    }));
+    const tracks = records.map(record => {
+      // Get the reactions field
+      let reactions = {};
+      const reactionsField = record.get('Reactions');
+      
+      // Parse reactions if they exist
+      if (reactionsField) {
+        if (typeof reactionsField === 'string') {
+          try {
+            reactions = JSON.parse(reactionsField);
+          } catch (parseError) {
+            console.error('[AIRTABLE] Error parsing reactions JSON:', parseError);
+          }
+        } else if (typeof reactionsField === 'object') {
+          reactions = reactionsField;
+        }
+      }
+      
+      return {
+        id: record.id,
+        name: record.get('Name') as string,
+        prompt: record.get('Prompt') as string,
+        lyrics: record.get('Lyrics') as string,
+        url: record.get('Url') as string,
+        createdAt: record.get('CreatedAt') as string,
+        foundryId: record.get('FoundryId') as string,
+        reactions: reactions,
+      };
+    });
     
     console.log(`[AIRTABLE] Returning ${tracks.length} tracks`);
     return tracks;

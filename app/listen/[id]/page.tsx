@@ -42,6 +42,18 @@ type Track = {
   url: string;
   createdAt: string;
   foundryId: string;
+  reactions?: {
+    '⭐'?: number;
+    '🎵'?: number;
+    '🥁'?: number;
+    '🔊'?: number;
+    '📝'?: number;
+    '❓'?: number;
+    '💡'?: number;
+    '🔁'?: number;
+    '🌟'?: number;
+    '📈'?: number;
+  };
 };
 
 export default function ListenPage() {
@@ -71,6 +83,54 @@ export default function ListenPage() {
   const [instrumental, setInstrumental] = useState(false);
   const [trackMenuOpen, setTrackMenuOpen] = useState<string | null>(null);
   const [expandedTracks, setExpandedTracks] = useState<Set<string>>(new Set());
+  const [showReactionPopup, setShowReactionPopup] = useState<string | null>(null);
+  
+  // Define the reaction types and their descriptions
+  const reactionTypes = [
+    { emoji: '⭐', description: 'Quality rating (general excellence)' },
+    { emoji: '🎵', description: 'Melody focus (strong melodic elements)' },
+    { emoji: '🥁', description: 'Rhythm focus (strong beat/percussion)' },
+    { emoji: '🔊', description: 'Production quality (sound design/mixing)' },
+    { emoji: '📝', description: 'Needs work/revision (constructive criticism)' },
+    { emoji: '❓', description: 'Confusion/question (something doesn\'t work)' },
+    { emoji: '💡', description: 'Innovative idea (creative or novel approach)' },
+    { emoji: '🔁', description: 'Repetitive (could use more variation)' },
+    { emoji: '🌟', description: 'Standout track (exceptional compared to others)' },
+    { emoji: '📈', description: 'Showing improvement/growth (evolutionary progress)' }
+  ];
+  
+  // Function to add a reaction
+  const addReaction = async (trackId: string, reaction: string) => {
+    try {
+      const response = await fetch(`/api/foundries/${foundryId}/tracks/${trackId}/reactions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ reaction }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to add reaction');
+      }
+      
+      const updatedReactions = await response.json();
+      
+      // Update the track in the local state
+      setTracks(prevTracks => 
+        prevTracks.map(track => 
+          track.id === trackId 
+            ? { ...track, reactions: updatedReactions } 
+            : track
+        )
+      );
+      
+      // Close the reaction popup
+      setShowReactionPopup(null);
+    } catch (error) {
+      console.error('Error adding reaction:', error);
+    }
+  };
   
   // Add state for autonomous thinking
   const [autonomousMode, setAutonomousMode] = useState(false);
@@ -669,7 +729,7 @@ export default function ListenPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, thoughts]);
   
-  // Add click outside handler for options menu
+  // Add click outside handler for options menu and reaction popup
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (showOptions && !(event.target as Element).closest('.options-menu')) {
@@ -679,13 +739,17 @@ export default function ListenPage() {
       if (trackMenuOpen && !(event.target as Element).closest('.track-menu')) {
         setTrackMenuOpen(null);
       }
+      
+      if (showReactionPopup && !(event.target as Element).closest('.reaction-popup')) {
+        setShowReactionPopup(null);
+      }
     }
     
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [showOptions, trackMenuOpen]);
+  }, [showOptions, trackMenuOpen, showReactionPopup]);
   
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1300,6 +1364,23 @@ export default function ListenPage() {
                           </div>
                           
                           <div className="flex items-center space-x-1">
+                            {/* Add reaction button */}
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setShowReactionPopup(showReactionPopup === track.id ? null : track.id);
+                              }}
+                              className="p-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                              aria-label="Add reaction"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+                                <line x1="9" y1="9" x2="9.01" y2="9"></line>
+                                <line x1="15" y1="9" x2="15.01" y2="9"></line>
+                              </svg>
+                            </button>
+        
                             <button 
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -1361,7 +1442,42 @@ export default function ListenPage() {
                             </div>
                           </div>
                         </div>
-                        
+    
+                        {/* Display reactions if any */}
+                        {track.reactions && Object.keys(track.reactions).length > 0 && (
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {Object.entries(track.reactions).map(([emoji, count]) => (
+                              <div 
+                                key={emoji} 
+                                className="flex items-center bg-black/5 dark:bg-white/5 px-2 py-1 rounded-full text-xs"
+                                title={reactionTypes.find(r => r.emoji === emoji)?.description || ''}
+                              >
+                                <span className="mr-1">{emoji}</span>
+                                <span>{count}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+    
+                        {/* Reaction popup */}
+                        {showReactionPopup === track.id && (
+                          <div className="absolute z-20 bg-card shadow-lg rounded-lg p-2 border border-border mt-2 animate-fadeIn reaction-popup">
+                            <div className="text-xs font-medium mb-2 text-muted-foreground">Add reaction:</div>
+                            <div className="grid grid-cols-5 gap-2">
+                              {reactionTypes.map(({ emoji, description }) => (
+                                <button
+                                  key={emoji}
+                                  onClick={() => addReaction(track.id, emoji)}
+                                  className="w-8 h-8 flex items-center justify-center hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-colors"
+                                  title={description}
+                                >
+                                  {emoji}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+    
                         {/* Expanded track details with animation */}
                         {expandedTracks.has(track.id) && (
                           <div 
