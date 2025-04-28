@@ -52,9 +52,13 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   const foundryId = params.id;
+  console.log(`[TRACKS] Starting track creation for foundry ID: ${foundryId}`);
+  
   const body = await request.json();
+  console.log(`[TRACKS] Request body:`, body);
   
   if (!body.content) {
+    console.log(`[TRACKS] Error: Message content is required`);
     return NextResponse.json(
       { error: 'Message content is required' },
       { status: 400 }
@@ -66,6 +70,7 @@ export async function POST(
     const trackInstructions = 
       "Respond only with a JSON object containing: 1) 'prompt': a detailed prompt for the music model (including style, sonorities, emotions), 2) 'style': a specific music genre or style (e.g., 'Jazz', 'Classical', 'Electronic'), 3) 'title': a creative title for the track, and 4) 'lyrics': complete lyrics for the track. Format your response as valid JSON without any additional text.";
     
+    console.log(`[TRACKS] Sending message to 'tracks' channel with instructions`);
     const messageResponse = await sendChannelMessage(
       foundryId,
       'tracks', // Channel ID for tracks
@@ -77,9 +82,12 @@ export async function POST(
       }
     );
     
+    console.log(`[TRACKS] Received response from channel:`, messageResponse);
+    
     // Parse the response content to get the music generation parameters
     let musicParams;
     try {
+      console.log(`[TRACKS] Parsing music parameters from response content:`, messageResponse.content);
       // The content might be a JSON string
       if (typeof messageResponse.content === 'string') {
         musicParams = JSON.parse(messageResponse.content);
@@ -87,12 +95,15 @@ export async function POST(
         musicParams = messageResponse.content;
       }
       
+      console.log(`[TRACKS] Parsed music parameters:`, musicParams);
+      
       // Validate the required fields
       if (!musicParams.prompt || !musicParams.style || !musicParams.title || !musicParams.lyrics) {
+        console.log(`[TRACKS] Error: Missing required music parameters`);
         throw new Error('Missing required music parameters');
       }
     } catch (parseError) {
-      console.error('Error parsing music parameters:', parseError);
+      console.error(`[TRACKS] Error parsing music parameters:`, parseError);
       return NextResponse.json(
         { error: 'Failed to parse music parameters from AI response' },
         { status: 500 }
@@ -104,16 +115,17 @@ export async function POST(
     try {
       // Store a placeholder track in Airtable immediately
       try {
-        await createTrack(
+        console.log(`[TRACKS] Creating placeholder track in Airtable: "${musicParams.title}"`);
+        const placeholderTrack = await createTrack(
           foundryId,
           musicParams.title,
           musicParams.prompt,
           musicParams.lyrics,
           "pending" // This will be updated when the callback comes
         );
-        console.log(`Created placeholder track "${musicParams.title}" in Airtable`);
+        console.log(`[TRACKS] Created placeholder track in Airtable:`, placeholderTrack);
       } catch (airtableError) {
-        console.error('Error creating placeholder track in Airtable:', airtableError);
+        console.error(`[TRACKS] Error creating placeholder track in Airtable:`, airtableError);
         // Continue anyway, don't fail the request
       }
       
@@ -121,7 +133,9 @@ export async function POST(
       const host = request.headers.get('host');
       const protocol = host?.includes('localhost') ? 'http' : 'https';
       const callbackUrl = `${protocol}://${host}/api/foundries/${foundryId}/tracks/callback`;
+      console.log(`[TRACKS] Callback URL for SUNO API: ${callbackUrl}`);
       
+      console.log(`[TRACKS] Calling SUNO API to generate music`);
       musicResponse = await generateMusic(
         musicParams.lyrics, // Use lyrics as the prompt for SUNO
         musicParams.style,
@@ -129,12 +143,14 @@ export async function POST(
         false, // Not instrumental since we're using lyrics
         callbackUrl
       );
+      console.log(`[TRACKS] SUNO API response:`, musicResponse);
     } catch (musicError) {
-      console.error('Error generating music:', musicError);
+      console.error(`[TRACKS] Error generating music with SUNO API:`, musicError);
       // Continue without music generation in case of error
     }
     
     // Return the combined response
+    console.log(`[TRACKS] Returning response to client`);
     return NextResponse.json({
       ...messageResponse,
       music_task_id: musicResponse?.data?.task_id,
@@ -146,10 +162,11 @@ export async function POST(
       }
     });
   } catch (error) {
-    console.error('Error in POST /api/foundries/[id]/tracks:', error);
+    console.error(`[TRACKS] Error in POST /api/foundries/[id]/tracks:`, error);
     
     // For development, return mock data if the API call fails
     if (process.env.NODE_ENV !== 'production') {
+      console.log(`[TRACKS] Returning mock data for development`);
       return NextResponse.json({
         id: `mock-track-${Date.now()}`,
         status: "completed",

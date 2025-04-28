@@ -26,7 +26,10 @@ export async function generateMusic(
   instrumental: boolean = false,
   callbackUrl: string
 ) {
-  console.log(`Generating music with SUNO API: ${title}`);
+  console.log(`[SUNO] Generating music with SUNO API: "${title}"`);
+  console.log(`[SUNO] Parameters - Style: "${style}", Instrumental: ${instrumental}`);
+  console.log(`[SUNO] Callback URL: ${callbackUrl}`);
+  console.log(`[SUNO] Prompt/Lyrics: "${prompt.substring(0, 100)}${prompt.length > 100 ? '...' : ''}"`);
   
   const requestBody: SunoGenerateRequest = {
     prompt,
@@ -38,9 +41,10 @@ export async function generateMusic(
     callBackUrl: callbackUrl
   };
   
-  console.log('SUNO API request body:', JSON.stringify(requestBody));
+  console.log('[SUNO] API request body:', JSON.stringify(requestBody, null, 2));
   
   try {
+    console.log(`[SUNO] Sending request to ${SUNO_API_URL}`);
     const response = await fetch(SUNO_API_URL, {
       method: 'POST',
       headers: {
@@ -50,19 +54,36 @@ export async function generateMusic(
       body: JSON.stringify(requestBody),
     });
     
-    console.log('SUNO API response status:', response.status);
+    console.log(`[SUNO] API response status: ${response.status}`);
     
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.msg || `Failed to generate music: ${response.status}`);
+    // Log response headers
+    const headers: Record<string, string> = {};
+    response.headers.forEach((value, key) => {
+      headers[key] = value;
+    });
+    console.log(`[SUNO] Response headers:`, headers);
+    
+    const responseText = await response.text();
+    console.log(`[SUNO] Raw response text: ${responseText}`);
+    
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error(`[SUNO] Error parsing response JSON:`, parseError);
+      throw new Error(`Failed to parse response: ${responseText}`);
     }
     
-    const data: SunoGenerateResponse = await response.json();
-    console.log('SUNO API response data:', data);
+    if (!response.ok) {
+      console.error(`[SUNO] Error response from API:`, data);
+      throw new Error(data.msg || `Failed to generate music: ${response.status}`);
+    }
+    
+    console.log('[SUNO] API response data:', data);
     
     return data;
   } catch (error) {
-    console.error('Error generating music with SUNO API:', error);
+    console.error('[SUNO] Error generating music with SUNO API:', error);
     throw error;
   }
 }

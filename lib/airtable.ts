@@ -103,7 +103,11 @@ export async function createTrack(
   lyrics: string,
   audioUrl: string
 ) {
+  console.log(`[AIRTABLE] Creating track in Airtable - Title: "${title}", FoundryId: ${foundryId}`);
+  console.log(`[AIRTABLE] Track URL: ${audioUrl}`);
+  
   try {
+    console.log(`[AIRTABLE] Creating record in TRACKS table`);
     const records = await trackTable.create([
       {
         fields: {
@@ -117,6 +121,8 @@ export async function createTrack(
       },
     ]);
     
+    console.log(`[AIRTABLE] Track created successfully with ID: ${records[0].id}`);
+    
     return {
       id: records[0].id,
       name: records[0].get('Name') as string,
@@ -127,13 +133,16 @@ export async function createTrack(
       foundryId: records[0].get('FoundryId') as string,
     };
   } catch (error) {
-    console.error('Error creating track in Airtable:', error);
+    console.error('[AIRTABLE] Error creating track in Airtable:', error);
     throw error;
   }
 }
 
 export async function getTracksByFoundryId(foundryId: string) {
+  console.log(`[AIRTABLE] Fetching tracks for foundry ID: ${foundryId}`);
+  
   try {
+    console.log(`[AIRTABLE] Querying TRACKS table with filter: {FoundryId} = '${foundryId}'`);
     const records = await trackTable
       .select({
         filterByFormula: `{FoundryId} = '${foundryId}'`,
@@ -141,7 +150,9 @@ export async function getTracksByFoundryId(foundryId: string) {
       })
       .all();
     
-    return records.map(record => ({
+    console.log(`[AIRTABLE] Found ${records.length} tracks for foundry ID: ${foundryId}`);
+    
+    const tracks = records.map(record => ({
       id: record.id,
       name: record.get('Name') as string,
       prompt: record.get('Prompt') as string,
@@ -150,8 +161,11 @@ export async function getTracksByFoundryId(foundryId: string) {
       createdAt: record.get('CreatedAt') as string,
       foundryId: record.get('FoundryId') as string,
     }));
+    
+    console.log(`[AIRTABLE] Returning ${tracks.length} tracks`);
+    return tracks;
   } catch (error) {
-    console.error('Error fetching tracks from Airtable:', error);
+    console.error('[AIRTABLE] Error fetching tracks from Airtable:', error);
     throw error;
   }
 }

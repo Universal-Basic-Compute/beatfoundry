@@ -196,11 +196,15 @@ export default function ListenPage() {
   const handleCreateTrack = async () => {
     if (!newMessage.trim()) return;
     
+    console.log(`[UI] Creating track for foundry ID: ${foundryId}`);
+    console.log(`[UI] Message content: ${newMessage}`);
+    
     setCreatingTrack(true);
     setTrackError(null);
     setTrackCreated(false);
     
     try {
+      console.log(`[UI] Sending POST request to /api/foundries/${foundryId}/tracks`);
       const response = await fetch(`/api/foundries/${foundryId}/tracks`, {
         method: 'POST',
         headers: {
@@ -211,25 +215,41 @@ export default function ListenPage() {
         }),
       });
       
-      if (!response.ok) throw new Error('Failed to create track');
+      console.log(`[UI] Track creation response status: ${response.status}`);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error(`[UI] Error response:`, errorData);
+        throw new Error(errorData.error || 'Failed to create track');
+      }
+      
+      const data = await response.json();
+      console.log(`[UI] Track creation successful:`, data);
       
       setTrackCreated(true);
       setNewMessage('');
       
       // Refresh tracks after a short delay to give time for processing
+      console.log(`[UI] Setting timeout to refresh tracks in 5 seconds`);
       setTimeout(() => {
+        console.log(`[UI] Refreshing tracks list`);
         fetch(`/api/foundries/${foundryId}/tracks`)
-          .then(res => res.json())
+          .then(res => {
+            console.log(`[UI] Tracks refresh response status: ${res.status}`);
+            return res.json();
+          })
           .then(data => {
+            console.log(`[UI] Received ${data.length} tracks`);
             setTracks(data);
             if (data.length > 0) {
+              console.log(`[UI] Setting current track to first track: "${data[0].name}"`);
               setCurrentTrack(data[0]);
             }
           })
-          .catch(err => console.error('Error fetching updated tracks:', err));
+          .catch(err => console.error('[UI] Error fetching updated tracks:', err));
       }, 5000);
     } catch (err) {
-      console.error('Error creating track:', err);
+      console.error('[UI] Error creating track:', err);
       setTrackError('Failed to create track. Please try again.');
     } finally {
       setCreatingTrack(false);
