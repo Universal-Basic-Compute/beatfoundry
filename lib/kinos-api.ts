@@ -1,5 +1,5 @@
 const KINOS_API_BASE_URL = 'https://api.kinos-engine.ai/v2';
-const BLUEPRINT_ID = 'kinos'; // Default blueprint ID, can be made configurable
+const BLUEPRINT_ID = process.env.KINOS_BLUEPRINT_ID || 'beatfoundry'; // Use environment variable with fallback
 
 export async function createKin(name: string, templateOverride?: string) {
   const url = `${KINOS_API_BASE_URL}/blueprints/${BLUEPRINT_ID}/kins`;
