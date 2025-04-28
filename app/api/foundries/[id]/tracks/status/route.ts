@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: any) {
   const foundryId = params.id;
   const url = new URL(request.url);
   const taskId = url.searchParams.get('taskId');
