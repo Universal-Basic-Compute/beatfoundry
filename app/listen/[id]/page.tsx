@@ -513,6 +513,17 @@ export default function ListenPage() {
     const messageContent = newMessage;
     setNewMessage('');
     
+    // Add a temporary loading generation immediately
+    const tempId = `temp-${Date.now()}`;
+    const tempTitle = "Generating...";
+    setPendingGenerations(prev => [...prev, {
+      id: tempId,
+      taskId: 'pending',
+      title: tempTitle,
+      status: 'INITIALIZING',
+      createdAt: new Date().toISOString()
+    }]);
+    
     try {
       console.log(`[UI] Sending POST request to /api/foundries/${foundryId}/tracks`);
       const response = await fetch(`/api/foundries/${foundryId}/tracks`, {
@@ -531,6 +542,10 @@ export default function ListenPage() {
       if (!response.ok) {
         const errorData = await response.json();
         console.error(`[UI] Error response:`, errorData);
+        
+        // Remove the temporary loading generation
+        setPendingGenerations(prev => prev.filter(gen => gen.id !== tempId));
+        
         throw new Error(errorData.error || 'Failed to create track');
       }
       
@@ -538,7 +553,6 @@ export default function ListenPage() {
       console.log(`[UI] Track creation response:`, data);
       
       // Music generation response handling
-      
       console.log(`[UI] Music generation initiated:`, data);
       console.log(`[UI] music_task_id:`, data.music_task_id);
       
@@ -547,12 +561,33 @@ export default function ListenPage() {
         console.log(`[UI] Starting to poll for task ID: ${data.music_task_id}`);
         // Extract title from the response if available
         const title = data.music_parameters?.title || 'New Track';
+        
+        // Remove the temporary loading generation
+        setPendingGenerations(prev => prev.filter(gen => gen.id !== tempId));
+        
+        // Start the real polling with the actual task ID
         pollMusicGenerationStatus(data.music_task_id, title);
       } else {
         console.warn(`[UI] No music_task_id found in response, polling will not start`);
+        
+        // Keep the temporary loading generation but update its status
+        setPendingGenerations(prev => prev.map(gen => 
+          gen.id === tempId 
+            ? { ...gen, status: 'ERROR', title: 'Failed to start generation' } 
+            : gen
+        ));
+        
+        // Remove it after a few seconds
+        setTimeout(() => {
+          setPendingGenerations(prev => prev.filter(gen => gen.id !== tempId));
+        }, 5000);
       }
     } catch (err) {
       console.error('[UI] Error creating track:', err);
+      
+      // Remove the temporary loading generation
+      setPendingGenerations(prev => prev.filter(gen => gen.id !== tempId));
+      
       // Show error in the UI
       setPendingGenerations(prev => [...prev, {
         id: `error-${Date.now()}`,
@@ -678,11 +713,14 @@ export default function ListenPage() {
                                   ? 'bg-green-600 w-full' 
                                   : gen.status.includes('FAILED') || gen.status === 'ERROR'
                                     ? 'bg-red-600 w-full'
-                                    : 'bg-blue-600 animate-pulse w-full'
+                                    : gen.status === 'INITIALIZING'
+                                      ? 'bg-purple-600 animate-pulse w-1/4' // Show a shorter progress bar for initializing
+                                      : 'bg-blue-600 animate-pulse w-full'
                               }`}
                             ></div>
                           </div>
                           <p className="text-xs mt-2 text-gray-500 dark:text-gray-400">
+                            {gen.status === 'INITIALIZING' && 'Preparing to generate music...'}
                             {gen.status === 'PENDING' && 'Music generation in progress... (this may take a few minutes)'}
                             {gen.status === 'TEXT_SUCCESS' && 'Lyrics generated, creating music...'}
                             {gen.status === 'FIRST_SUCCESS' && 'First track generated, creating variations...'}
@@ -718,11 +756,14 @@ export default function ListenPage() {
                                   ? 'bg-green-600 w-full' 
                                   : gen.status.includes('FAILED') || gen.status === 'ERROR'
                                     ? 'bg-red-600 w-full'
-                                    : 'bg-blue-600 animate-pulse w-full'
+                                    : gen.status === 'INITIALIZING'
+                                      ? 'bg-purple-600 animate-pulse w-1/4' // Show a shorter progress bar for initializing
+                                      : 'bg-blue-600 animate-pulse w-full'
                               }`}
                             ></div>
                           </div>
                           <p className="text-xs mt-2 text-gray-500 dark:text-gray-400">
+                            {gen.status === 'INITIALIZING' && 'Preparing to generate music...'}
                             {gen.status === 'PENDING' && 'Music generation in progress... (this may take a few minutes)'}
                             {gen.status === 'TEXT_SUCCESS' && 'Lyrics generated, creating music...'}
                             {gen.status === 'FIRST_SUCCESS' && 'First track generated, creating variations...'}
