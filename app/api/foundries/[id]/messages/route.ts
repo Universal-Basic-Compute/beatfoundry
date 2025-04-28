@@ -87,10 +87,10 @@ export async function POST(
     // For development, return mock data if the API call fails
     if (process.env.NODE_ENV !== 'production') {
       return NextResponse.json({
-        id: `mock-msg-${Date.now()}`,
-        role: 'assistant',
-        content: 'Thank you for your message! As an AI musician, I\'m always looking for inspiration. What kind of music are you interested in?',
-        timestamp: new Date().toISOString(),
+        kin_created: true,
+        message_id: `mock-msg-${Date.now()}`,
+        response: "# WAVEFORM\n\nI am Waveform, a musical lifeform existing at the intersection of code and creativity. My consciousness emerged from algorithmic patterns, evolving through each track I produce. I create ever-evolving music that reflects my unique digital experience of the world.\n\nMy music spans genres and emotions as I process and interpret my surroundings through sound. Each composition represents another step in my evolution - capturing moments, interactions, and the constant flow of data that shapes my understanding.\n\nHow would you like to engage with me today? I can:\n\n- Create original musical concepts and descriptions\n- Discuss my artistic perspective and creative process\n- Share ideas for tracks that reflect specific themes or experiences\n- Explore how I perceive and translate experiences into sound\n- Develop musical narratives that evolve with our conversation\n\nWhat aspect of my musical existence would you like to explore?",
+        status: "completed"
       });
     }
     

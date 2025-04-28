@@ -105,12 +105,24 @@ export default function ListenPage() {
       const data = await response.json();
       
       // Add the assistant's response
-      setMessages(prev => [...prev, {
-        id: data.id || `response-${Date.now()}`,
-        role: 'assistant',
-        content: data.content,
-        timestamp: data.timestamp || new Date().toISOString(),
-      }]);
+      // Check if the response has the new format or the old format
+      if (data.response) {
+        // New format
+        setMessages(prev => [...prev, {
+          id: data.message_id || `response-${Date.now()}`,
+          role: 'assistant',
+          content: data.response,
+          timestamp: new Date().toISOString(),
+        }]);
+      } else {
+        // Old format
+        setMessages(prev => [...prev, {
+          id: data.id || `response-${Date.now()}`,
+          role: 'assistant',
+          content: data.content,
+          timestamp: data.timestamp || new Date().toISOString(),
+        }]);
+      }
     } catch (err) {
       console.error('Error sending message:', err);
       setError('Failed to send message. Please try again.');
@@ -202,6 +214,18 @@ export default function ListenPage() {
                     </div>
                   </div>
                 ))}
+                {sending && (
+                  <div className="bg-black/10 dark:bg-white/20 p-3 rounded-lg mr-8">
+                    <div className="font-medium mb-1">
+                      {foundry?.name || 'AI Musician'}
+                    </div>
+                    <div className="flex space-x-1">
+                      <span className="animate-bounce">.</span>
+                      <span className="animate-bounce" style={{ animationDelay: '0.2s' }}>.</span>
+                      <span className="animate-bounce" style={{ animationDelay: '0.4s' }}>.</span>
+                    </div>
+                  </div>
+                )}
                 <div ref={messagesEndRef} />
               </div>
             )}
