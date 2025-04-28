@@ -96,10 +96,18 @@ export async function POST(request, { params }) {
   console.log(`[TRACKS] Instrumental mode: ${instrumental}`);
   
   try {
-    // Instructions to directly generate music without concept approval
-    const trackInstructions = instrumental
-      ? "Respond only with a JSON object containing: 1) 'prompt': a brief list of keywords for style, sonorities, and emotions (no more than 10-15 words total), 2) 'style': a specific music genre or style (e.g., 'Jazz', 'Classical', 'Electronic'), 3) 'title': a creative title for the track, and 4) 'presentation': a brief artistic explanation of the concept behind this track (2-3 sentences). Format your response as valid JSON without any additional text. This will be an instrumental track without lyrics."
-      : "Respond only with a JSON object containing: 1) 'prompt': a brief list of keywords for style, sonorities, and emotions (no more than 10-15 words total), 2) 'style': a specific music genre or style (e.g., 'Jazz', 'Classical', 'Electronic'), 3) 'title': a creative title for the track, 4) 'presentation': a brief artistic explanation of the concept behind this track (2-3 sentences), and 5) 'lyrics': complete lyrics for the track. Format your response as valid JSON without any additional text.";
+    // Check if this is from autonomous thinking
+    const fromThinking = body.fromThinking === true;
+    console.log(`[TRACKS] From autonomous thinking: ${fromThinking}`);
+    
+    // If this is from autonomous thinking, use a more specific instruction
+    const trackInstructions = fromThinking
+      ? (instrumental
+          ? "You are receiving thoughts from an AI musician's autonomous thinking process. Create a JSON object containing: 1) 'prompt': a brief list of keywords for style, sonorities, and emotions (no more than 10-15 words total) based on these thoughts, 2) 'style': a specific music genre or style that fits the thoughts, 3) 'title': a creative title for the track inspired by the thoughts, and 4) 'presentation': a brief artistic explanation of the concept behind this track (2-3 sentences). Format your response as valid JSON without any additional text. This will be an instrumental track without lyrics."
+          : "You are receiving thoughts from an AI musician's autonomous thinking process. Create a JSON object containing: 1) 'prompt': a brief list of keywords for style, sonorities, and emotions (no more than 10-15 words total) based on these thoughts, 2) 'style': a specific music genre or style that fits the thoughts, 3) 'title': a creative title for the track inspired by the thoughts, 4) 'presentation': a brief artistic explanation of the concept behind this track (2-3 sentences), and 5) 'lyrics': complete lyrics for the track that reflect the thoughts. Format your response as valid JSON without any additional text.")
+      : (instrumental
+          ? "Respond only with a JSON object containing: 1) 'prompt': a brief list of keywords for style, sonorities, and emotions (no more than 10-15 words total), 2) 'style': a specific music genre or style (e.g., 'Jazz', 'Classical', 'Electronic'), 3) 'title': a creative title for the track, and 4) 'presentation': a brief artistic explanation of the concept behind this track (2-3 sentences). Format your response as valid JSON without any additional text. This will be an instrumental track without lyrics."
+          : "Respond only with a JSON object containing: 1) 'prompt': a brief list of keywords for style, sonorities, and emotions (no more than 10-15 words total), 2) 'style': a specific music genre or style (e.g., 'Jazz', 'Classical', 'Electronic'), 3) 'title': a creative title for the track, 4) 'presentation': a brief artistic explanation of the concept behind this track (2-3 sentences), and 5) 'lyrics': complete lyrics for the track. Format your response as valid JSON without any additional text.");
     
     console.log(`[TRACKS] Sending message to 'tracks' channel with instructions`);
   

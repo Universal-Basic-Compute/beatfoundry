@@ -381,6 +381,9 @@ export default function ListenPage() {
         eventSource.close();
         setEventSource(null);
       }
+      
+      // Clear thoughts when turning off autonomous mode
+      setThoughts([]);
     }
     
     return () => {
@@ -1151,7 +1154,7 @@ export default function ListenPage() {
                         </button>
                       </div>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        {autonomousMode ? 'AI will generate thoughts autonomously' : 'AI will respond to your messages'}
+                        {autonomousMode ? 'AI will generate thoughts and music autonomously' : 'AI will respond to your messages'}
                       </p>
                     </div>
                   </div>
