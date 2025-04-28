@@ -359,13 +359,13 @@ export default function ListenPage() {
       setTimeout(() => {
         setThinking(false);
         
-        // If autonomous mode is still on, trigger thinking again after a delay
+        // If autonomous mode is still on, trigger thinking again after a longer delay (one minute)
         if (autonomousMode) {
           setTimeout(() => {
             if (autonomousMode) {
               triggerThinking();
             }
-          }, 10000); // Wait 10 seconds before triggering again
+          }, 60000); // Wait 60 seconds (one minute) before triggering again
         }
       }, 3000);
       
@@ -379,7 +379,7 @@ export default function ListenPage() {
           if (autonomousMode) {
             triggerThinking();
           }
-        }, 5000); // Wait 5 seconds before trying again
+        }, 60000); // Wait 60 seconds (one minute) before trying again
       }
     }
   };
