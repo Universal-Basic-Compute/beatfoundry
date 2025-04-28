@@ -1404,7 +1404,7 @@ export default function ListenPage() {
         </div>
         
         {/* Right side - Chat */}
-        <div className="w-full md:w-1/2 p-6 flex flex-col h-[calc(100vh-80px)]">
+        <div className="w-full md:w-1/2 p-6 flex flex-col h-[calc(100vh-80px)] relative">
           <div className="flex justify-between items-center mb-6">
             <div className="flex items-center">
               <h2 className="text-2xl font-bold text-foreground">Chat with {foundry?.name || 'AI Musician'}</h2>
@@ -1486,8 +1486,8 @@ export default function ListenPage() {
             </div>
           )}
           
-          {/* Improved message container */}
-          <div className="flex-1 overflow-y-auto mb-4 bg-black/5 dark:bg-white/5 rounded-xl p-4 custom-scrollbar">
+          {/* Improved message container - add pb-24 to create space for the fixed input */}
+          <div className="flex-1 overflow-y-auto mb-4 bg-black/5 dark:bg-white/5 rounded-xl p-4 custom-scrollbar pb-24">
             {loading ? (
               <div className="flex items-center justify-center h-full">
                 <div className="flex flex-col items-center">
@@ -1659,9 +1659,10 @@ export default function ListenPage() {
             )}
           </div>
           
-          {/* Improved message input */}
-          <form onSubmit={handleSendMessage} className="flex flex-col">
-            <div className="flex rounded-xl overflow-hidden border border-border shadow-sm focus-within:ring-2 focus-within:ring-primary/50 transition-all">
+          {/* Fixed position message input at the bottom */}
+          <div className="absolute bottom-6 left-6 right-6">
+            <form onSubmit={handleSendMessage} className="flex flex-col">
+              <div className="flex rounded-xl overflow-hidden border border-border shadow-sm focus-within:ring-2 focus-within:ring-primary/50 transition-all bg-background">
               <input
                 type="text"
                 value={newMessage}
@@ -1694,8 +1695,9 @@ export default function ListenPage() {
                   <circle cx="18" cy="16" r="3"></circle>
                 </svg>
               </button>
-            </div>
-          </form>
+              </div>
+            </form>
+          </div>
         </div>
       </main>
     </div>
