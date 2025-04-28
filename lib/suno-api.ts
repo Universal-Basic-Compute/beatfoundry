@@ -29,8 +29,17 @@ export async function generateMusic(
   console.log(`[SUNO] Generating music with SUNO API: "${title}"`);
   console.log(`[SUNO] Parameters - Style: "${style}", Instrumental: ${instrumental}`);
   
-  // Use the provided callback URL or fall back to the production URL if needed
-  const finalCallbackUrl = callbackUrl || `https://beatsfoundry.vercel.app/api/foundries/${foundryId}/tracks/callback`;
+  // Always use the production URL in production environment
+  let finalCallbackUrl;
+  if (process.env.NODE_ENV === 'production') {
+    // Extract the foundry ID from the provided callback URL
+    const foundryIdMatch = callbackUrl.match(/\/foundries\/([^\/]+)\/tracks\/callback/);
+    const foundryId = foundryIdMatch ? foundryIdMatch[1] : '';
+    finalCallbackUrl = `https://beatsfoundry.vercel.app/api/foundries/${foundryId}/tracks/callback`;
+  } else {
+    finalCallbackUrl = callbackUrl;
+  }
+  
   console.log(`[SUNO] Callback URL: ${finalCallbackUrl}`);
   console.log(`[SUNO] Prompt/Lyrics: "${prompt.substring(0, 100)}${prompt.length > 100 ? '...' : ''}"`);
   
