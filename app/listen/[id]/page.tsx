@@ -416,9 +416,9 @@ export default function ListenPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                {messages.map((message) => (
+                {messages.map((message, index) => (
                   <div 
-                    key={message.id} 
+                    key={message.id || `message-${index}`} 
                     className={`p-3 rounded-lg ${
                       message.role === 'user' 
                         ? 'bg-foreground text-background ml-8' 
