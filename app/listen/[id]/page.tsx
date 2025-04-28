@@ -170,6 +170,20 @@ export default function ListenPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
   
+  // Add click outside handler for options menu
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (showOptions && !(event.target as Element).closest('.options-menu')) {
+        setShowOptions(false);
+      }
+    }
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showOptions]);
+  
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -341,6 +355,7 @@ export default function ListenPage() {
     
     console.log(`[UI] Creating track for foundry ID: ${foundryId}`);
     console.log(`[UI] Message content: ${newMessage}`);
+    console.log(`[UI] Instrumental: ${instrumental}`);
     
     setCreatingTrack(true);
     setTrackError(null);
@@ -356,6 +371,7 @@ export default function ListenPage() {
         },
         body: JSON.stringify({
           content: newMessage,
+          instrumental: instrumental,
         }),
       });
       
@@ -527,7 +543,47 @@ export default function ListenPage() {
         
         {/* Right side - Chat */}
         <div className="w-full md:w-1/2 p-6 flex flex-col h-[calc(100vh-80px)]">
-          <h2 className="text-2xl font-semibold mb-4">Chat with {foundry?.name || 'AI Musician'}</h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-semibold">Chat with {foundry?.name || 'AI Musician'}</h2>
+            
+            {/* Options menu */}
+            <div className="relative">
+              <button 
+                onClick={() => setShowOptions(!showOptions)}
+                className="p-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10"
+                aria-label="Options"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="1"></circle>
+                  <circle cx="19" cy="12" r="1"></circle>
+                  <circle cx="5" cy="12" r="1"></circle>
+                </svg>
+              </button>
+              
+              {showOptions && (
+                <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 z-10 options-menu">
+                  <div className="py-1" role="menu" aria-orientation="vertical">
+                    <div className="px-4 py-2 text-sm text-gray-700 dark:text-gray-200">
+                      <div className="flex items-center justify-between">
+                        <span>Instrumental Only</span>
+                        <button 
+                          onClick={() => setInstrumental(!instrumental)}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full ${instrumental ? 'bg-purple-600' : 'bg-gray-300 dark:bg-gray-600'}`}
+                        >
+                          <span 
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${instrumental ? 'translate-x-6' : 'translate-x-1'}`} 
+                          />
+                        </button>
+                      </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        {instrumental ? 'Generate music without lyrics' : 'Generate music with lyrics'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
           
           {error && (
             <div className="bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 p-3 rounded-lg mb-4">

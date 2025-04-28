@@ -91,10 +91,15 @@ export async function POST(request, { params }) {
     );
   }
   
+  // Extract the instrumental parameter, default to false if not provided
+  const instrumental = body.instrumental === true;
+  console.log(`[TRACKS] Instrumental mode: ${instrumental}`);
+  
   try {
     // Add instructions to respond with JSON containing prompt and lyrics
-    const trackInstructions = 
-      "Respond only with a JSON object containing: 1) 'prompt': a detailed prompt for the music model (including style, sonorities, emotions), 2) 'style': a specific music genre or style (e.g., 'Jazz', 'Classical', 'Electronic'), 3) 'title': a creative title for the track, and 4) 'lyrics': complete lyrics for the track. Format your response as valid JSON without any additional text.";
+    const trackInstructions = instrumental
+      ? "Respond only with a JSON object containing: 1) 'prompt': a detailed prompt for the music model (including style, sonorities, emotions), 2) 'style': a specific music genre or style (e.g., 'Jazz', 'Classical', 'Electronic'), and 3) 'title': a creative title for the track. Format your response as valid JSON without any additional text. This will be an instrumental track without lyrics."
+      : "Respond only with a JSON object containing: 1) 'prompt': a detailed prompt for the music model (including style, sonorities, emotions), 2) 'style': a specific music genre or style (e.g., 'Jazz', 'Classical', 'Electronic'), 3) 'title': a creative title for the track, and 4) 'lyrics': complete lyrics for the track. Format your response as valid JSON without any additional text.";
     
     console.log(`[TRACKS] Sending message to 'tracks' channel with instructions`);
     const messageResponse = await sendChannelMessage(
@@ -153,10 +158,10 @@ export async function POST(request, { params }) {
       
       console.log(`[TRACKS] Calling SUNO API to generate music`);
       musicResponse = await generateMusic(
-        musicParams.lyrics, // Use lyrics as the prompt for SUNO
+        musicParams.lyrics || musicParams.prompt, // Use lyrics if available, otherwise use prompt
         musicParams.style,
         musicParams.title,
-        false, // Not instrumental since we're using lyrics
+        instrumental, // Pass the instrumental parameter
         callbackUrl
       );
       console.log(`[TRACKS] SUNO API response:`, musicResponse);
