@@ -2,42 +2,42 @@
 
 :root {
   /* Base colors */
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #F8F9FA;
+  --foreground: #121212;
   
   /* Primary colors */
-  --primary: #6366f1; /* Indigo-500 */
-  --primary-foreground: #ffffff;
+  --primary: #5D3FD3; /* Deep Purple */
+  --primary-foreground: #FFFFFF;
   
   /* Secondary colors */
-  --secondary: #8b5cf6; /* Violet-500 */
-  --secondary-foreground: #ffffff;
+  --secondary: #7B68EE; /* Medium Slate Blue */
+  --secondary-foreground: #FFFFFF;
   
   /* Accent colors */
-  --accent: #ec4899; /* Pink-500 */
-  --accent-foreground: #ffffff;
+  --accent: #00B4D8; /* Vivid Cerulean */
+  --accent-foreground: #FFFFFF;
   
   /* UI colors */
-  --card: #ffffff;
-  --card-foreground: #171717;
-  --popover: #ffffff;
-  --popover-foreground: #171717;
-  --muted: #f3f4f6; /* Gray-100 */
-  --muted-foreground: #6b7280; /* Gray-500 */
+  --card: #FFFFFF;
+  --card-foreground: #121212;
+  --popover: #FFFFFF;
+  --popover-foreground: #121212;
+  --muted: #F3F4F6; /* Gray-100 */
+  --muted-foreground: #6B7280; /* Gray-500 */
   
   /* Border and input colors */
-  --border: #e5e7eb; /* Gray-200 */
-  --input: #e5e7eb; /* Gray-200 */
+  --border: #E5E7EB; /* Gray-200 */
+  --input: #E5E7EB; /* Gray-200 */
   
   /* Feedback colors */
-  --success: #10b981; /* Emerald-500 */
-  --warning: #f59e0b; /* Amber-500 */
-  --destructive: #ef4444; /* Red-500 */
-  --destructive-foreground: #ffffff;
+  --success: #10B981; /* Emerald-500 */
+  --warning: #F59E0B; /* Amber-500 */
+  --destructive: #EF4444; /* Red-500 */
+  --destructive-foreground: #FFFFFF;
   
   /* Radius and shadows */
   --radius: 0.5rem;
-  --ring: #6366f1; /* Indigo-500 */
+  --ring: #5D3FD3; /* Deep Purple */
 }
 
 @theme inline {
@@ -53,41 +53,41 @@
 @media (prefers-color-scheme: dark) {
   :root {
     /* Base colors */
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #121212;
+    --foreground: #F8F9FA;
     
     /* Primary colors */
-    --primary: #818cf8; /* Indigo-400 */
-    --primary-foreground: #030712; /* Gray-950 */
+    --primary: #7B68EE; /* Medium Slate Blue */
+    --primary-foreground: #FFFFFF;
     
     /* Secondary colors */
-    --secondary: #a78bfa; /* Violet-400 */
-    --secondary-foreground: #030712; /* Gray-950 */
+    --secondary: #9F86FF; /* Lighter Purple */
+    --secondary-foreground: #121212;
     
     /* Accent colors */
-    --accent: #f472b6; /* Pink-400 */
-    --accent-foreground: #030712; /* Gray-950 */
+    --accent: #00B4D8; /* Vivid Cerulean */
+    --accent-foreground: #121212;
     
     /* UI colors */
-    --card: #171717; /* Gray-900 */
-    --card-foreground: #ededed;
-    --popover: #171717; /* Gray-900 */
-    --popover-foreground: #ededed;
+    --card: #1E1E1E; /* Slightly lighter than background */
+    --card-foreground: #F8F9FA;
+    --popover: #1E1E1E;
+    --popover-foreground: #F8F9FA;
     --muted: #262626; /* Gray-800 */
-    --muted-foreground: #a1a1aa; /* Zinc-400 */
+    --muted-foreground: #A1A1AA; /* Zinc-400 */
     
     /* Border and input colors */
     --border: #262626; /* Gray-800 */
     --input: #262626; /* Gray-800 */
     
     /* Feedback colors */
-    --success: #34d399; /* Emerald-400 */
-    --warning: #fbbf24; /* Amber-400 */
-    --destructive: #f87171; /* Red-400 */
-    --destructive-foreground: #030712; /* Gray-950 */
+    --success: #34D399; /* Emerald-400 */
+    --warning: #FBBF24; /* Amber-400 */
+    --destructive: #F87171; /* Red-400 */
+    --destructive-foreground: #121212;
     
     /* Radius and shadows */
-    --ring: #818cf8; /* Indigo-400 */
+    --ring: #7B68EE; /* Medium Slate Blue */
   }
 }
 
