@@ -1555,7 +1555,7 @@ export default function ListenPage() {
         </div>
         
         {/* Right side - Chat */}
-        <div className="w-full md:w-1/2 p-6 flex flex-col h-[calc(100vh-80px)] relative">
+        <div className="w-full md:w-1/2 p-6 flex flex-col h-[calc(100vh-80px)] relative overflow-hidden">
           <div className="flex justify-between items-center mb-6">
             <div className="flex items-center">
               <h2 className="text-2xl font-bold text-foreground">Chat with {foundry?.name || 'AI Musician'}</h2>
