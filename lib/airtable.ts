@@ -104,7 +104,9 @@ export async function createTrack(
   audioUrl: string
 ) {
   console.log(`[AIRTABLE] Creating track in Airtable - Title: "${title}", FoundryId: ${foundryId}`);
-  console.log(`[AIRTABLE] Track URL: ${audioUrl}`);
+  console.log(`[AIRTABLE] Track URL to be saved: "${audioUrl}"`);
+  console.log(`[AIRTABLE] URL type: ${typeof audioUrl}`);
+  console.log(`[AIRTABLE] URL length: ${audioUrl?.length || 0}`);
   
   try {
     console.log(`[AIRTABLE] Creating record in TRACKS table`);
@@ -122,6 +124,10 @@ export async function createTrack(
     ]);
     
     console.log(`[AIRTABLE] Track created successfully with ID: ${records[0].id}`);
+    console.log(`[AIRTABLE] Saved fields:`);
+    console.log(`[AIRTABLE] - Name: ${records[0].get('Name')}`);
+    console.log(`[AIRTABLE] - URL: ${records[0].get('Url')}`);
+    console.log(`[AIRTABLE] - FoundryId: ${records[0].get('FoundryId')}`);
     
     return {
       id: records[0].id,

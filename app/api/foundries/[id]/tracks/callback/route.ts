@@ -41,6 +41,11 @@ export async function POST(request, { params }) {
             const title = track.title || track.name || 'Untitled Track';
             const prompt = track.prompt || track.description || '';
             
+            console.log('[CALLBACK] Extracted track details:');
+            console.log(`[CALLBACK] - Title: "${title}"`);
+            console.log(`[CALLBACK] - Audio URL: "${audioUrl}"`);
+            console.log(`[CALLBACK] - Prompt: "${prompt}"`);
+            
             if (!audioUrl) {
               console.error('[CALLBACK] No audio URL found in track data');
               continue;
@@ -48,6 +53,7 @@ export async function POST(request, { params }) {
             
             // Get the lyrics from the track data or use a placeholder
             const lyrics = track.lyrics || prompt || "No lyrics available";
+            console.log(`[CALLBACK] - Lyrics: "${lyrics.substring(0, 100)}${lyrics.length > 100 ? '...' : ''}"`);
             
             console.log(`[CALLBACK] Creating track in Airtable: ${title}, URL: ${audioUrl}`);
             
@@ -60,7 +66,10 @@ export async function POST(request, { params }) {
               audioUrl
             );
             
-            console.log(`[CALLBACK] Successfully stored track "${title}" in Airtable:`, createdTrack);
+            console.log(`[CALLBACK] Successfully stored track "${title}" in Airtable:`);
+            console.log(`[CALLBACK] - Track ID: ${createdTrack.id}`);
+            console.log(`[CALLBACK] - Track Name: ${createdTrack.name}`);
+            console.log(`[CALLBACK] - Track URL saved to Airtable: ${createdTrack.url}`);
           } catch (trackError) {
             console.error('[CALLBACK] Error storing track in Airtable:', trackError);
           }
