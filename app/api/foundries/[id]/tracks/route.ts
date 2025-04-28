@@ -147,7 +147,8 @@ export async function POST(request, { params }) {
           musicParams.title,
           musicParams.prompt,
           musicParams.lyrics,
-          "pending" // This will be updated when the callback comes
+          "pending", // This will be updated when the callback comes
+          musicResponse?.data?.task_id || musicResponse?.data?.taskId // Save the taskId
         );
         console.log(`[TRACKS] Created placeholder track in Airtable:`, placeholderTrack);
       } catch (airtableError) {
@@ -186,7 +187,7 @@ export async function POST(request, { params }) {
     // Return the combined response
     const responseData = {
       ...messageResponse,
-      music_task_id: musicResponse?.data?.task_id,
+      music_task_id: musicResponse?.data?.task_id || musicResponse?.data?.taskId,
       music_parameters: {
         prompt: musicParams.prompt,
         style: musicParams.style,

@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { NextResponse } from 'next/server';
-import { createTrack } from '@/lib/airtable';
+import { createTrack, updateTrackByTaskId } from '@/lib/airtable';
 
 // This endpoint will receive callbacks from SUNO API when music generation is complete
 export async function POST(request, { params }) {
@@ -20,6 +20,10 @@ export async function POST(request, { params }) {
       // The structure might be different than expected
       // Let's log the exact structure to understand it better
       console.log('[CALLBACK] Body data structure:', JSON.stringify(body.data, null, 2));
+      
+      // Extract the taskId from the callback data
+      const taskId = body.data.taskId || body.data.task_id || body.taskId || body.task_id;
+      console.log(`[CALLBACK] Extracted taskId: ${taskId}`);
       
       // Check different possible structures
       const tracks = Array.isArray(body.data) ? body.data : 
@@ -55,7 +59,18 @@ export async function POST(request, { params }) {
             const lyrics = track.lyrics || prompt || "No lyrics available";
             console.log(`[CALLBACK] - Lyrics: "${lyrics.substring(0, 100)}${lyrics.length > 100 ? '...' : ''}"`);
             
-            console.log(`[CALLBACK] Creating track in Airtable: ${title}, URL: ${audioUrl}`);
+            // Try to update existing track by taskId first
+            if (taskId) {
+              console.log(`[CALLBACK] Attempting to update existing track with TaskId: ${taskId}`);
+              const updatedTrack = await updateTrackByTaskId(taskId, audioUrl);
+              
+              if (updatedTrack) {
+                console.log(`[CALLBACK] Successfully updated track with TaskId ${taskId}`);
+                continue; // Skip creating a new track
+              }
+            }
+            
+            console.log(`[CALLBACK] Creating new track in Airtable: ${title}, URL: ${audioUrl}`);
             
             // Store in Airtable
             const createdTrack = await createTrack(
@@ -63,7 +78,8 @@ export async function POST(request, { params }) {
               title,
               prompt,
               lyrics,
-              audioUrl
+              audioUrl,
+              taskId // Save the taskId with the new track
             );
             
             console.log(`[CALLBACK] Successfully stored track "${title}" in Airtable:`);

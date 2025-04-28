@@ -101,25 +101,36 @@ export async function createTrack(
   title: string,
   prompt: string,
   lyrics: string,
-  audioUrl: string
+  audioUrl: string,
+  taskId?: string // Add optional taskId parameter
 ) {
   console.log(`[AIRTABLE] Creating track in Airtable - Title: "${title}", FoundryId: ${foundryId}`);
   console.log(`[AIRTABLE] Track URL to be saved: "${audioUrl}"`);
   console.log(`[AIRTABLE] URL type: ${typeof audioUrl}`);
   console.log(`[AIRTABLE] URL length: ${audioUrl?.length || 0}`);
+  if (taskId) {
+    console.log(`[AIRTABLE] Task ID to be saved: "${taskId}"`);
+  }
   
   try {
     console.log(`[AIRTABLE] Creating record in TRACKS table`);
+    const fields: any = {
+      Name: title,
+      Prompt: prompt,
+      Lyrics: lyrics,
+      Url: audioUrl,
+      CreatedAt: new Date().toISOString(),
+      FoundryId: foundryId,
+    };
+    
+    // Add TaskId field if provided
+    if (taskId) {
+      fields.TaskId = taskId;
+    }
+    
     const records = await trackTable.create([
       {
-        fields: {
-          Name: title,
-          Prompt: prompt,
-          Lyrics: lyrics,
-          Url: audioUrl,
-          CreatedAt: new Date().toISOString(),
-          FoundryId: foundryId,
-        },
+        fields: fields,
       },
     ]);
     
@@ -128,6 +139,9 @@ export async function createTrack(
     console.log(`[AIRTABLE] - Name: ${records[0].get('Name')}`);
     console.log(`[AIRTABLE] - URL: ${records[0].get('Url')}`);
     console.log(`[AIRTABLE] - FoundryId: ${records[0].get('FoundryId')}`);
+    if (taskId) {
+      console.log(`[AIRTABLE] - TaskId: ${records[0].get('TaskId')}`);
+    }
     
     return {
       id: records[0].id,
@@ -137,9 +151,60 @@ export async function createTrack(
       url: records[0].get('Url') as string,
       createdAt: records[0].get('CreatedAt') as string,
       foundryId: records[0].get('FoundryId') as string,
+      taskId: records[0].get('TaskId') as string,
     };
   } catch (error) {
     console.error('[AIRTABLE] Error creating track in Airtable:', error);
+    throw error;
+  }
+}
+
+export async function updateTrackByTaskId(taskId: string, audioUrl: string) {
+  console.log(`[AIRTABLE] Updating track with TaskId: "${taskId}"`);
+  console.log(`[AIRTABLE] New audio URL: "${audioUrl}"`);
+  
+  try {
+    // Find the track with the matching TaskId
+    const records = await trackTable
+      .select({
+        filterByFormula: `{TaskId} = '${taskId}'`,
+        maxRecords: 1,
+      })
+      .all();
+    
+    if (records.length === 0) {
+      console.log(`[AIRTABLE] No track found with TaskId: "${taskId}"`);
+      return null;
+    }
+    
+    const record = records[0];
+    console.log(`[AIRTABLE] Found track to update: ${record.id}, Name: ${record.get('Name')}`);
+    
+    // Update the track with the new audio URL
+    const updatedRecord = await trackTable.update([
+      {
+        id: record.id,
+        fields: {
+          Url: audioUrl,
+        },
+      },
+    ]);
+    
+    console.log(`[AIRTABLE] Track updated successfully: ${updatedRecord[0].id}`);
+    console.log(`[AIRTABLE] New URL: ${updatedRecord[0].get('Url')}`);
+    
+    return {
+      id: updatedRecord[0].id,
+      name: updatedRecord[0].get('Name') as string,
+      prompt: updatedRecord[0].get('Prompt') as string,
+      lyrics: updatedRecord[0].get('Lyrics') as string,
+      url: updatedRecord[0].get('Url') as string,
+      createdAt: updatedRecord[0].get('CreatedAt') as string,
+      foundryId: updatedRecord[0].get('FoundryId') as string,
+      taskId: updatedRecord[0].get('TaskId') as string,
+    };
+  } catch (error) {
+    console.error('[AIRTABLE] Error updating track in Airtable:', error);
     throw error;
   }
 }

@@ -21,6 +21,7 @@ export async function GET(request: NextRequest, { params }: any) {
     const statusUrl = `https://apibox.erweima.ai/api/v1/generate/record-info?taskId=${taskId}`;
     
     console.log(`[STATUS] Fetching status from: ${statusUrl}`);
+    console.log(`[STATUS] Looking for taskId: ${taskId}`);
     
     const response = await fetch(statusUrl, {
       method: 'GET',
