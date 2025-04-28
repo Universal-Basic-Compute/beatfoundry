@@ -7,11 +7,8 @@ const mockFoundries = [
   { id: '2', name: 'JazzMind', description: 'AI jazz composer exploring improvisational techniques' },
 ];
 
-export async function GET(
-  request: Request,
-  context: { params: { id: string } }
-) {
-  const foundryId = context.params.id;
+export async function GET(request, { params }) {
+  const foundryId = params.id;
   
   try {
     // Try to get foundry from Airtable

@@ -1,16 +1,13 @@
 import { NextResponse } from 'next/server';
 import { getMessages, sendMessage } from '@/lib/kinos-messages-api';
 
-export async function GET(
-  request: Request,
-  context: { params: { id: string } }
-) {
-  const foundryId = context.params.id;
+export async function GET(request, { params }) {
+  const foundryId = params.id;
   const url = new URL(request.url);
   
   const since = url.searchParams.get('since') || undefined;
-  const limit = url.searchParams.get('limit') ? parseInt(url.searchParams.get('limit')!) : undefined;
-  const offset = url.searchParams.get('offset') ? parseInt(url.searchParams.get('offset')!) : undefined;
+  const limit = url.searchParams.get('limit') ? parseInt(url.searchParams.get('limit')) : undefined;
+  const offset = url.searchParams.get('offset') ? parseInt(url.searchParams.get('offset')) : undefined;
   const channelId = url.searchParams.get('channel_id') || undefined;
   
   try {
@@ -52,11 +49,8 @@ export async function GET(
   }
 }
 
-export async function POST(
-  request: Request,
-  context: { params: { id: string } }
-) {
-  const foundryId = context.params.id;
+export async function POST(request, { params }) {
+  const foundryId = params.id;
   const body = await request.json();
   
   if (!body.content) {

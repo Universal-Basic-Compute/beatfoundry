@@ -4,11 +4,8 @@ import { generateMusic } from '@/lib/suno-api';
 import { getTracksByFoundryId, createTrack } from '@/lib/airtable';
 
 // Add a GET method to fetch tracks
-export async function GET(
-  request: Request,
-  context: { params: { id: string } }
-) {
-  const foundryId = context.params.id;
+export async function GET(request, { params }) {
+  const foundryId = params.id;
   
   try {
     const tracks = await getTracksByFoundryId(foundryId);
@@ -47,11 +44,8 @@ export async function GET(
   }
 }
 
-export async function POST(
-  request: Request,
-  context: { params: { id: string } }
-) {
-  const foundryId = context.params.id;
+export async function POST(request, { params }) {
+  const foundryId = params.id;
   console.log(`[TRACKS] Starting track creation for foundry ID: ${foundryId}`);
   
   const body = await request.json();
