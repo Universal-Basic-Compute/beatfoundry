@@ -1259,13 +1259,25 @@ export default function ListenPage() {
                       <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-accent/20 rounded-full"></div>
                       <div className="w-full h-full bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center shadow-lg overflow-hidden">
                         {currentTrack?.cover ? (
-                          <Image 
-                            src={currentTrack.cover} 
-                            alt={currentTrack.name} 
-                            width={192} 
-                            height={192} 
-                            className="w-full h-full object-cover"
-                          />
+                          <>
+                            <Image 
+                              src={currentTrack.cover} 
+                              alt={currentTrack.name} 
+                              width={192} 
+                              height={192} 
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                console.error(`Error loading cover image: ${currentTrack.cover}`);
+                                e.currentTarget.src = '/images/default-cover.jpg'; // Fallback image
+                              }}
+                            />
+                            {/* Add this for debugging */}
+                            {process.env.NODE_ENV !== 'production' && (
+                              <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs p-1 rounded">
+                                Cover: {currentTrack.cover.substring(0, 20)}...
+                              </div>
+                            )}
+                          </>
                         ) : (
                           <span className="text-5xl">🎵</span>
                         )}
@@ -1364,13 +1376,25 @@ export default function ListenPage() {
                           >
                             <div className="w-10 h-10 rounded-md overflow-hidden mr-3 flex-shrink-0">
                               {track.cover ? (
-                                <Image 
-                                  src={track.cover} 
-                                  alt={track.name} 
-                                  width={40} 
-                                  height={40} 
-                                  className="w-full h-full object-cover"
-                                />
+                                <>
+                                  <Image 
+                                    src={track.cover} 
+                                    alt={track.name} 
+                                    width={40} 
+                                    height={40} 
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                      console.error(`Error loading cover image: ${track.cover}`);
+                                      e.currentTarget.src = '/images/default-cover.jpg'; // Fallback image
+                                    }}
+                                  />
+                                  {/* Add this for debugging */}
+                                  {process.env.NODE_ENV !== 'production' && (
+                                    <div className="absolute bottom-0 right-0 bg-black/70 text-white text-[8px] p-1">
+                                      {track.cover.substring(0, 15)}...
+                                    </div>
+                                  )}
+                                </>
                               ) : (
                                 <div className="w-full h-full bg-primary/10 flex items-center justify-center">
                                   <span className="text-lg">🎵</span>

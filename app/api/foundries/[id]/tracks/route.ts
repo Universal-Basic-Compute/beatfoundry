@@ -241,6 +241,8 @@ export async function POST(request, { params }) {
               baseUrl = `${protocol}://${host}`;
             }
             
+            console.log(`[TRACKS] Using base URL for image generation: ${baseUrl}`);
+            
             const coverResponse = await fetch(`${baseUrl}/api/foundries/${foundryId}/images`, {
               method: 'POST',
               headers: {
@@ -254,10 +256,15 @@ export async function POST(request, { params }) {
             });
             
             if (!coverResponse.ok) {
-              console.error(`[TRACKS] Error generating cover image:`, await coverResponse.text());
+              const errorText = await coverResponse.text();
+              console.error(`[TRACKS] Error generating cover image: ${coverResponse.status}`);
+              console.error(`[TRACKS] Error details: ${errorText}`);
             } else {
               const coverData = await coverResponse.json();
               console.log(`[TRACKS] Successfully generated cover image: ${coverData.cover_url}`);
+              
+              // Add this line to log the full response
+              console.log(`[TRACKS] Cover image response:`, JSON.stringify(coverData, null, 2));
             }
           } catch (coverError) {
             console.error(`[TRACKS] Error generating cover image:`, coverError);
