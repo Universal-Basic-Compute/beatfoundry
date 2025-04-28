@@ -395,6 +395,138 @@ export default function ListenPage() {
     };
   }, [autonomousMode]);
   
+  // Add function to compile thinking results
+  const compileThinkingResults = () => {
+    if (thoughts.length === 0) return null;
+    
+    const keywordsThought = thoughts.find(t => t.step === 'keywords');
+    const dreamThought = thoughts.find(t => t.step === 'dream');
+    const daydreamingThought = thoughts.find(t => t.step === 'daydreaming');
+    const initiativeThought = thoughts.find(t => t.step === 'initiative');
+    
+    // Create a comprehensive prompt from the thinking results
+    let trackPrompt = "Create a track based on these thoughts:\n\n";
+    
+    if (keywordsThought && keywordsThought.content) {
+      const keywords = keywordsThought.content.relevant_keywords || [];
+      const emotions = keywordsThought.content.emotions || [];
+      trackPrompt += `Keywords: ${keywords.join(', ')}\n`;
+      trackPrompt += `Emotions: ${emotions.join(', ')}\n\n`;
+    }
+    
+    if (dreamThought && dreamThought.content) {
+      trackPrompt += `Dream: ${dreamThought.content}\n\n`;
+    }
+    
+    if (daydreamingThought && daydreamingThought.content) {
+      trackPrompt += `Daydreaming: ${daydreamingThought.content}\n\n`;
+    }
+    
+    if (initiativeThought && initiativeThought.content) {
+      trackPrompt += `Initiative: ${initiativeThought.content}\n\n`;
+    }
+    
+    return trackPrompt;
+  };
+
+  // Add a function to create a track from thinking results
+  const createTrackFromThinking = async (prompt) => {
+    if (!prompt) return;
+    
+    console.log(`[UI] Creating track from autonomous thinking with prompt:`, prompt);
+    
+    // Change button text
+    setCreateButtonText('Creating...');
+    
+    // Add a temporary loading generation immediately
+    const tempId = `temp-${Date.now()}`;
+    const tempTitle = "Generating from Thoughts...";
+    setPendingGenerations(prev => [...prev, {
+      id: tempId,
+      taskId: 'pending',
+      title: tempTitle,
+      status: 'INITIALIZING',
+      createdAt: new Date().toISOString()
+    }]);
+    
+    // Reset button text after a short delay (1.5 seconds)
+    setTimeout(() => {
+      setCreateButtonText('Create Track');
+    }, 1500);
+    
+    try {
+      const trackResponse = await fetch(`/api/foundries/${foundryId}/tracks`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          content: prompt,
+          instrumental: instrumental,
+          fromThinking: true
+        }),
+      });
+      
+      if (!trackResponse.ok) {
+        console.error(`[UI] Error creating track from thinking:`, await trackResponse.text());
+        
+        // Remove the temporary loading generation
+        setPendingGenerations(prev => prev.filter(gen => gen.id !== tempId));
+        
+        throw new Error('Failed to create track from thinking');
+      }
+      
+      const trackData = await trackResponse.json();
+      console.log(`[UI] Successfully created track from thinking:`, trackData);
+      
+      // If we have a task ID, start polling for status
+      if (trackData.music_task_id) {
+        console.log(`[UI] Starting to poll for task ID: ${trackData.music_task_id}`);
+        // Extract title from the response if available
+        const title = trackData.music_parameters?.title || 'Autonomous Track';
+        
+        // Remove the temporary loading generation
+        setPendingGenerations(prev => prev.filter(gen => gen.id !== tempId));
+        
+        // Start the real polling with the actual task ID
+        pollMusicGenerationStatus(trackData.music_task_id, title);
+      } else {
+        console.warn(`[UI] No music_task_id found in response, polling will not start`);
+        
+        // Keep the temporary loading generation but update its status
+        setPendingGenerations(prev => prev.map(gen => 
+          gen.id === tempId 
+            ? { ...gen, status: 'ERROR', title: 'Failed to start generation' } 
+            : gen
+        ));
+        
+        // Remove it after a few seconds
+        setTimeout(() => {
+          setPendingGenerations(prev => prev.filter(gen => gen.id !== tempId));
+        }, 5000);
+      }
+    } catch (trackError) {
+      console.error('[UI] Error creating track from thinking:', trackError);
+      
+      // Remove the temporary loading generation
+      setPendingGenerations(prev => prev.filter(gen => gen.id !== tempId));
+      
+      // Show error in the UI
+      setPendingGenerations(prev => [...prev, {
+        id: `error-${Date.now()}`,
+        taskId: 'error',
+        title: 'Error Creating from Thoughts',
+        status: 'ERROR',
+        createdAt: new Date().toISOString()
+      }]);
+      
+      // Remove the error after a few seconds
+      setTimeout(() => {
+        setPendingGenerations(prev => prev.filter(gen => gen.taskId === 'error'));
+      }, 5000);
+    }
+  };
+
   // Function to connect to the SSE endpoint
   const connectToThinkingEvents = () => {
     if (eventSource) {
@@ -437,11 +569,32 @@ export default function ListenPage() {
               return newThoughts;
             } else {
               // Add the new step
-              return [...prev, {
+              const newThoughts = [...prev, {
                 step: data.step,
                 content: data.content,
                 timestamp: data.timestamp
               }];
+              
+              // Check if we have all the required thinking steps
+              const hasKeywords = newThoughts.some(t => t.step === 'keywords');
+              const hasDream = newThoughts.some(t => t.step === 'dream');
+              const hasDaydreaming = newThoughts.some(t => t.step === 'daydreaming');
+              const hasInitiative = newThoughts.some(t => t.step === 'initiative');
+              
+              // If we have all the required steps, create a track
+              if (hasKeywords && hasDream && hasDaydreaming && hasInitiative) {
+                console.log('[UI] All thinking steps complete, creating track');
+                
+                // Wait a moment to ensure all data is processed
+                setTimeout(() => {
+                  const prompt = compileThinkingResults();
+                  if (prompt) {
+                    createTrackFromThinking(prompt);
+                  }
+                }, 1000);
+              }
+              
+              return newThoughts;
             }
           });
         }
