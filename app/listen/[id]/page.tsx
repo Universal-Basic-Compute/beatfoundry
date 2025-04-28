@@ -1136,7 +1136,7 @@ export default function ListenPage() {
         </div>
       </header>
       
-      <main className="flex-1 flex flex-col md:flex-row max-w-6xl mx-auto w-full">
+      <main className="flex-1 flex flex-col md:flex-row max-w-6xl mx-auto w-full h-[calc(100vh-80px)]">
         {/* Left side - Music Player */}
         <div className="w-full md:w-1/2 p-6 border-r">
           <div className="bg-gradient-to-br from-card to-card/80 text-card-foreground rounded-xl p-8 h-full flex flex-col shadow-md">
@@ -1567,9 +1567,11 @@ export default function ListenPage() {
             )}
           </div>
         </div>
+      </div>
         
         {/* Right side - Chat */}
-        <div className="w-full md:w-1/2 p-6 flex flex-col h-[calc(100vh-80px)] relative overflow-hidden">
+        <div className="w-full md:w-1/2 flex flex-col h-full relative overflow-hidden">
+          <div className="absolute inset-0 flex flex-col p-6">
           <div className="flex justify-between items-center mb-6">
             <div className="flex items-center">
               <h2 className="text-2xl font-bold text-foreground">Chat with {foundry?.name || 'AI Musician'}</h2>
@@ -1651,8 +1653,8 @@ export default function ListenPage() {
             </div>
           )}
           
-          {/* Improved message container - add pb-24 to create space for the fixed input */}
-          <div className="flex-1 overflow-y-auto mb-4 bg-black/5 dark:bg-white/5 rounded-xl p-4 custom-scrollbar pb-24">
+          {/* Improved message container with proper spacing for fixed input */}
+          <div className="flex-1 overflow-y-auto bg-black/5 dark:bg-white/5 rounded-xl p-4 custom-scrollbar mb-20">
             {loading ? (
               <div className="flex items-center justify-center h-full">
                 <div className="flex flex-col items-center">
@@ -1825,7 +1827,7 @@ export default function ListenPage() {
           </div>
           
           {/* Fixed position message input at the bottom */}
-          <div className="absolute bottom-6 left-6 right-6">
+          <div className="absolute bottom-6 left-6 right-6 z-10">
             <form onSubmit={handleSendMessage} className="flex flex-col">
               <div className="flex rounded-xl overflow-hidden border border-border shadow-sm focus-within:ring-2 focus-within:ring-primary/50 transition-all bg-background">
               <input
