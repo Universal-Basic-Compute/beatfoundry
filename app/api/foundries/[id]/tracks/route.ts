@@ -98,8 +98,8 @@ export async function POST(request, { params }) {
   try {
     // Add instructions to respond with JSON containing prompt and lyrics
     const trackInstructions = instrumental
-      ? "Respond only with a JSON object containing: 1) 'prompt': a detailed prompt for the music model (including style, sonorities, emotions), 2) 'style': a specific music genre or style (e.g., 'Jazz', 'Classical', 'Electronic'), and 3) 'title': a creative title for the track. Format your response as valid JSON without any additional text. This will be an instrumental track without lyrics."
-      : "Respond only with a JSON object containing: 1) 'prompt': a detailed prompt for the music model (including style, sonorities, emotions), 2) 'style': a specific music genre or style (e.g., 'Jazz', 'Classical', 'Electronic'), 3) 'title': a creative title for the track, and 4) 'lyrics': complete lyrics for the track. Format your response as valid JSON without any additional text.";
+      ? "Respond only with a JSON object containing: 1) 'prompt': a brief list of keywords for style, sonorities, and emotions (no more than 10-15 words total), 2) 'style': a specific music genre or style (e.g., 'Jazz', 'Classical', 'Electronic'), and 3) 'title': a creative title for the track. Format your response as valid JSON without any additional text. This will be an instrumental track without lyrics."
+      : "Respond only with a JSON object containing: 1) 'prompt': a brief list of keywords for style, sonorities, and emotions (no more than 10-15 words total), 2) 'style': a specific music genre or style (e.g., 'Jazz', 'Classical', 'Electronic'), 3) 'title': a creative title for the track, and 4) 'lyrics': complete lyrics for the track. Format your response as valid JSON without any additional text.";
     
     console.log(`[TRACKS] Sending message to 'tracks' channel with instructions`);
     const messageResponse = await sendChannelMessage(
