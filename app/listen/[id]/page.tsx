@@ -664,10 +664,10 @@ export default function ListenPage() {
     setEventSource(newEventSource);
   };
   
-  // Scroll to bottom when messages change
+  // Scroll to bottom when messages or thoughts change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, thoughts]);
   
   // Add click outside handler for options menu
   useEffect(() => {
