@@ -431,50 +431,25 @@ export default function ListenPage() {
       return null;
     }
     
-    console.log('[UI] Compiling thinking results from', thoughts.length, 'thoughts');
-    console.log('[UI] Available thoughts:', thoughts.map(t => t.step).join(', '));
+    // Find the initiative step
+    const initiativeStep = thoughts.find(thought => thought.step === 'initiative');
     
-    // Create a comprehensive prompt from the thinking results
-    let trackPrompt = "Create a track based on these thoughts:\n\n";
-    let hasContent = false;
-    
-    // Include any available thoughts, don't require specific ones
-    for (const thought of thoughts) {
-      if (thought.step === 'keywords' && thought.content) {
-        console.log('[UI] Adding keywords to prompt');
-        const keywords = thought.content.relevant_keywords || [];
-        const emotions = thought.content.emotions || [];
-        if (keywords.length > 0) {
-          trackPrompt += `Keywords: ${keywords.join(', ')}\n`;
-          hasContent = true;
-        }
-        if (emotions.length > 0) {
-          trackPrompt += `Emotions: ${emotions.join(', ')}\n`;
-          hasContent = true;
-        }
-        trackPrompt += '\n';
-      } else if (thought.step === 'dream' && thought.content) {
-        console.log('[UI] Adding dream to prompt');
-        trackPrompt += `Dream: ${thought.content}\n\n`;
-        hasContent = true;
-      } else if (thought.step === 'daydreaming' && thought.content) {
-        console.log('[UI] Adding daydreaming to prompt');
-        trackPrompt += `Daydreaming: ${thought.content}\n\n`;
-        hasContent = true;
-      } else if (thought.step === 'initiative' && thought.content) {
-        console.log('[UI] Adding initiative to prompt');
-        trackPrompt += `Initiative: ${thought.content}\n\n`;
-        hasContent = true;
-      }
+    if (initiativeStep && initiativeStep.content) {
+      console.log('[UI] Found initiative step, creating prompt');
+      
+      // Create a prompt from just the initiative
+      const prompt = `Create a track based on this initiative:\n\n${
+        typeof initiativeStep.content === 'string' 
+          ? initiativeStep.content 
+          : JSON.stringify(initiativeStep.content)
+      }`;
+      
+      console.log('[UI] Created prompt from initiative:', prompt);
+      return prompt;
     }
     
-    if (!hasContent) {
-      console.log('[UI] No content was added to the prompt');
-      return null;
-    }
-    
-    console.log('[UI] Compiled prompt:', trackPrompt);
-    return trackPrompt;
+    console.log('[UI] No initiative step found in thoughts');
+    return null;
   };
 
   // Add a function to create a track from thinking results
