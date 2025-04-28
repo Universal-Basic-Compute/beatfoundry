@@ -44,6 +44,8 @@ export default function ListenPage() {
   const [pollingTaskId, setPollingTaskId] = useState<string | null>(null);
   const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
   const [generationStatus, setGenerationStatus] = useState<string | null>(null);
+  const [showOptions, setShowOptions] = useState(false);
+  const [instrumental, setInstrumental] = useState(false);
   
   // Add state for tracks
   const [tracks, setTracks] = useState<Track[]>([]);
