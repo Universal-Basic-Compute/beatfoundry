@@ -40,3 +40,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .aider*
+
+# Ignore downloaded songs
+/public/songs/*.mp3
