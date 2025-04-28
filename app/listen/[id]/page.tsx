@@ -965,7 +965,7 @@ export default function ListenPage() {
                 onChange={(e) => setNewMessage(e.target.value)}
                 placeholder="Type your message..."
                 className="flex-1 p-3 border rounded-l-lg dark:bg-gray-800 dark:border-gray-700"
-                disabled={sending || creatingTrack}
+                disabled={sending}
               />
               <button
                 type="submit"
