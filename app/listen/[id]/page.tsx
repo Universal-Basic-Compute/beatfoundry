@@ -1584,10 +1584,10 @@ export default function ListenPage() {
                         <span className="font-medium">Create Autonomously</span>
                         <button 
                           onClick={() => setAutonomousMode(!autonomousMode)}
-                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${autonomousMode ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'}`}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${autonomousMode ? 'bg-primary' : 'bg-muted'}`}
                         >
                           <span 
-                            className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform duration-200 ${autonomousMode ? 'translate-x-6' : 'translate-x-1'}`} 
+                            className={`inline-block h-4 w-4 transform rounded-full bg-background shadow-md transition-transform duration-200 ${autonomousMode ? 'translate-x-6' : 'translate-x-1'}`} 
                           />
                         </button>
                       </div>
