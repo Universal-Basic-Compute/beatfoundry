@@ -1,0 +1,64 @@
+import { NextResponse } from 'next/server';
+
+export async function GET(request, { params }) {
+  const foundryId = params.id;
+  const url = new URL(request.url);
+  const taskId = url.searchParams.get('taskId');
+  
+  console.log(`[STATUS] Checking music generation status for foundry ID: ${foundryId}, task ID: ${taskId}`);
+  
+  if (!taskId) {
+    console.log(`[STATUS] Error: taskId is required`);
+    return NextResponse.json(
+      { error: 'taskId is required' },
+      { status: 400 }
+    );
+  }
+  
+  try {
+    const statusUrl = `https://apibox.erweima.ai/api/v1/generate/record-info?taskId=${taskId}`;
+    
+    console.log(`[STATUS] Fetching status from: ${statusUrl}`);
+    
+    const response = await fetch(statusUrl, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${process.env.SUNO_API_KEY}`,
+      },
+    });
+    
+    if (!response.ok) {
+      console.error(`[STATUS] Error response from SUNO API: ${response.status}`);
+      const errorText = await response.text();
+      console.error(`[STATUS] Error details: ${errorText}`);
+      return NextResponse.json(
+        { error: `Failed to check music generation status: ${response.status}` },
+        { status: 500 }
+      );
+    }
+    
+    const data = await response.json();
+    console.log(`[STATUS] Status check response:`, data);
+    
+    // If the status is SUCCESS, we can get the track URLs
+    if (data.code === 200 && data.data?.response?.status === 'SUCCESS') {
+      console.log(`[STATUS] Music generation completed successfully!`);
+      
+      // The data structure might include the track URLs directly
+      // If so, we can extract them and update the track in Airtable
+      // This is a fallback in case the callback didn't work
+      
+      // For now, just return the status data
+      return NextResponse.json(data);
+    }
+    
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error('[STATUS] Error checking music generation status:', error);
+    return NextResponse.json(
+      { error: 'Failed to check music generation status' },
+      { status: 500 }
+    );
+  }
+}

@@ -4,6 +4,37 @@ import { sendChannelMessage } from '@/lib/kinos-messages-api';
 import { generateMusic } from '@/lib/suno-api';
 import { getTracksByFoundryId, createTrack } from '@/lib/airtable';
 
+async function checkMusicGenerationStatus(taskId: string) {
+  console.log(`[TRACKS] Checking music generation status for task ID: ${taskId}`);
+  
+  const url = `https://apibox.erweima.ai/api/v1/generate/record-info?taskId=${taskId}`;
+  
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${process.env.SUNO_API_KEY}`,
+      },
+    });
+    
+    if (!response.ok) {
+      console.error(`[TRACKS] Error response from status API: ${response.status}`);
+      const errorText = await response.text();
+      console.error(`[TRACKS] Error details: ${errorText}`);
+      throw new Error(`Failed to check music generation status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    console.log(`[TRACKS] Status check response:`, data);
+    
+    return data;
+  } catch (error) {
+    console.error('[TRACKS] Error checking music generation status:', error);
+    throw error;
+  }
+}
+
 // Add a GET method to fetch tracks
 export async function GET(request, { params }) {
   const foundryId = params.id;

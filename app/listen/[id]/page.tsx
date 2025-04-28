@@ -41,6 +41,9 @@ export default function ListenPage() {
   const [creatingTrack, setCreatingTrack] = useState(false);
   const [trackCreated, setTrackCreated] = useState(false);
   const [trackError, setTrackError] = useState<string | null>(null);
+  const [pollingTaskId, setPollingTaskId] = useState<string | null>(null);
+  const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
+  const [generationStatus, setGenerationStatus] = useState<string | null>(null);
   
   // Add state for tracks
   const [tracks, setTracks] = useState<Track[]>([]);
@@ -129,8 +132,14 @@ export default function ListenPage() {
     // Set up polling to check for new tracks every 30 seconds
     const intervalId = setInterval(fetchTracks, 30000);
     
-    return () => clearInterval(intervalId);
-  }, [foundryId, currentTrack]);
+    return () => {
+      clearInterval(intervalId);
+      // Also clear the polling interval for task status if it exists
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+      }
+    };
+  }, [foundryId, currentTrack, pollingInterval]);
   
   // Handle audio playback
   useEffect(() => {
@@ -208,6 +217,76 @@ export default function ListenPage() {
     }
   };
   
+  // Add polling function for music generation status
+  const pollMusicGenerationStatus = async (taskId: string) => {
+    console.log(`[UI] Starting to poll for task ID: ${taskId}`);
+    setPollingTaskId(taskId);
+    setGenerationStatus('PENDING');
+    
+    // Clear any existing interval
+    if (pollingInterval) {
+      clearInterval(pollingInterval);
+    }
+    
+    // Set up polling every 10 seconds
+    const intervalId = setInterval(async () => {
+      try {
+        console.log(`[UI] Polling for task status: ${taskId}`);
+        const response = await fetch(`/api/foundries/${foundryId}/tracks/status?taskId=${taskId}`);
+        
+        if (!response.ok) {
+          console.error(`[UI] Error checking task status: ${response.status}`);
+          return;
+        }
+        
+        const data = await response.json();
+        console.log(`[UI] Task status response:`, data);
+        
+        if (data.data?.response?.status) {
+          const status = data.data.response.status;
+          setGenerationStatus(status);
+          
+          // If the task is complete, stop polling and refresh tracks
+          if (status === 'SUCCESS' || status === 'FIRST_SUCCESS') {
+            console.log(`[UI] Music generation completed successfully!`);
+            clearInterval(intervalId);
+            setPollingInterval(null);
+            setPollingTaskId(null);
+            
+            // Refresh the tracks list
+            console.log(`[UI] Refreshing tracks list`);
+            const tracksResponse = await fetch(`/api/foundries/${foundryId}/tracks`);
+            const tracksData = await tracksResponse.json();
+            console.log(`[UI] Received ${tracksData.length} tracks`);
+            setTracks(tracksData);
+            
+            if (tracksData.length > 0) {
+              // Find the newest track (should be the one we just created)
+              const sortedTracks = [...tracksData].sort((a, b) => 
+                new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+              );
+              console.log(`[UI] Setting current track to newest track: "${sortedTracks[0].name}"`);
+              setCurrentTrack(sortedTracks[0]);
+              setIsPlaying(true); // Auto-play the new track
+            }
+          } else if (status === 'CREATE_TASK_FAILED' || status === 'GENERATE_AUDIO_FAILED' || 
+                    status === 'CALLBACK_EXCEPTION' || status === 'SENSITIVE_WORD_ERROR') {
+            // If the task failed, stop polling
+            console.error(`[UI] Music generation failed with status: ${status}`);
+            clearInterval(intervalId);
+            setPollingInterval(null);
+            setPollingTaskId(null);
+            setTrackError(`Music generation failed: ${data.data.response.errorMessage || status}`);
+          }
+        }
+      } catch (error) {
+        console.error('[UI] Error polling for task status:', error);
+      }
+    }, 10000); // Poll every 10 seconds
+    
+    setPollingInterval(intervalId);
+  };
+
   const handleCreateTrack = async () => {
     if (!newMessage.trim()) return;
     
@@ -217,6 +296,7 @@ export default function ListenPage() {
     setCreatingTrack(true);
     setTrackError(null);
     setTrackCreated(false);
+    setGenerationStatus(null);
     
     try {
       console.log(`[UI] Sending POST request to /api/foundries/${foundryId}/tracks`);
@@ -244,25 +324,11 @@ export default function ListenPage() {
       setTrackCreated(true);
       setNewMessage('');
       
-      // Refresh tracks after a short delay to give time for processing
-      console.log(`[UI] Setting timeout to refresh tracks in 5 seconds`);
-      setTimeout(() => {
-        console.log(`[UI] Refreshing tracks list`);
-        fetch(`/api/foundries/${foundryId}/tracks`)
-          .then(res => {
-            console.log(`[UI] Tracks refresh response status: ${res.status}`);
-            return res.json();
-          })
-          .then(data => {
-            console.log(`[UI] Received ${data.length} tracks`);
-            setTracks(data);
-            if (data.length > 0) {
-              console.log(`[UI] Setting current track to first track: "${data[0].name}"`);
-              setCurrentTrack(data[0]);
-            }
-          })
-          .catch(err => console.error('[UI] Error fetching updated tracks:', err));
-      }, 5000);
+      // If we have a task ID, start polling for status
+      if (data.music_task_id) {
+        console.log(`[UI] Starting to poll for task ID: ${data.music_task_id}`);
+        pollMusicGenerationStatus(data.music_task_id);
+      }
     } catch (err) {
       console.error('[UI] Error creating track:', err);
       setTrackError('Failed to create track. Please try again.');
@@ -506,6 +572,28 @@ export default function ListenPage() {
             {trackCreated && (
               <div className="text-green-500 text-sm mt-1">
                 Track created successfully! It will appear in the music player soon.
+              </div>
+            )}
+            
+            {/* Show generation status if polling */}
+            {pollingTaskId && generationStatus && (
+              <div className="mt-2 text-sm">
+                <p>
+                  {generationStatus === 'PENDING' && 'Music generation in progress... (this may take a few minutes)'}
+                  {generationStatus === 'TEXT_SUCCESS' && 'Lyrics generated, creating music...'}
+                  {generationStatus === 'FIRST_SUCCESS' && 'First track generated, creating variations...'}
+                  {generationStatus === 'SUCCESS' && 'Music generation complete!'}
+                  {['CREATE_TASK_FAILED', 'GENERATE_AUDIO_FAILED', 'CALLBACK_EXCEPTION', 'SENSITIVE_WORD_ERROR'].includes(generationStatus) && 
+                    `Music generation failed: ${generationStatus}`}
+                </p>
+                {['PENDING', 'TEXT_SUCCESS', 'FIRST_SUCCESS'].includes(generationStatus) && (
+                  <div className="mt-1 w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                    <div 
+                      className="bg-blue-600 h-2.5 rounded-full animate-pulse" 
+                      style={{ width: '100%' }}
+                    ></div>
+                  </div>
+                )}
               </div>
             )}
           </form>
