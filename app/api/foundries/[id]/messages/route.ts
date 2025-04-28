@@ -1,17 +1,17 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { getMessages, sendMessage } from '@/lib/kinos-messages-api';
 
 export async function GET(
-  request: NextRequest,
+  request: Request,
   { params }: { params: { id: string } }
 ) {
   const foundryId = params.id;
-  const searchParams = request.nextUrl.searchParams;
+  const url = new URL(request.url);
   
-  const since = searchParams.get('since') || undefined;
-  const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined;
-  const offset = searchParams.get('offset') ? parseInt(searchParams.get('offset')!) : undefined;
-  const channelId = searchParams.get('channel_id') || undefined;
+  const since = url.searchParams.get('since') || undefined;
+  const limit = url.searchParams.get('limit') ? parseInt(url.searchParams.get('limit')!) : undefined;
+  const offset = url.searchParams.get('offset') ? parseInt(url.searchParams.get('offset')!) : undefined;
+  const channelId = url.searchParams.get('channel_id') || undefined;
   
   try {
     const messagesData = await getMessages(foundryId, {
@@ -53,7 +53,7 @@ export async function GET(
 }
 
 export async function POST(
-  request: NextRequest,
+  request: Request,
   { params }: { params: { id: string } }
 ) {
   const foundryId = params.id;
