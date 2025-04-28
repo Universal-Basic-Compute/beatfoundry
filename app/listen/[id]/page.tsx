@@ -38,12 +38,17 @@ export default function ListenPage() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [creatingTrack, setCreatingTrack] = useState(false);
-  const [trackCreated, setTrackCreated] = useState(false);
-  const [trackError, setTrackError] = useState<string | null>(null);
-  const [pollingTaskId, setPollingTaskId] = useState<string | null>(null);
-  const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
-  const [generationStatus, setGenerationStatus] = useState<string | null>(null);
+  // Track multiple pending generations instead of a single one
+  const [pendingGenerations, setPendingGenerations] = useState<Array<{
+    id: string;
+    taskId: string;
+    title: string;
+    status: string;
+    createdAt: string;
+  }>>([]);
+  
+  // Reference to store all polling intervals
+  const intervalsRef = useRef<{[key: string]: NodeJS.Timeout}>({});
   const [showOptions, setShowOptions] = useState(false);
   const [instrumental, setInstrumental] = useState(false);
   const [trackMenuOpen, setTrackMenuOpen] = useState<string | null>(null);
@@ -345,24 +350,23 @@ export default function ListenPage() {
   };
   
   // Add polling function for music generation status
-  const pollMusicGenerationStatus = async (taskId: string) => {
+  const pollMusicGenerationStatus = async (taskId: string, title: string) => {
     console.log(`[UI] pollMusicGenerationStatus called with taskId: ${taskId}`);
-    console.log(`[UI] Starting to poll for task ID: ${taskId}`);
-    setPollingTaskId(taskId);
-    setGenerationStatus('PENDING');
     
-    // Clear any existing interval
-    if (pollingInterval) {
-      console.log(`[UI] Clearing existing polling interval`);
-      clearInterval(pollingInterval);
-    }
+    // Add this generation to the pending list
+    const generationId = `gen-${Date.now()}`;
+    setPendingGenerations(prev => [...prev, {
+      id: generationId,
+      taskId,
+      title: title || 'New Track',
+      status: 'PENDING',
+      createdAt: new Date().toISOString()
+    }]);
     
     // Set up polling every 10 seconds
-    console.log(`[UI] Setting up new polling interval for task ID: ${taskId}`);
     const intervalId = setInterval(async () => {
       try {
         console.log(`[UI] Polling interval fired for task status: ${taskId}`);
-        console.log(`[UI] Sending request to: /api/foundries/${foundryId}/tracks/status?taskId=${taskId}`);
         const response = await fetch(`/api/foundries/${foundryId}/tracks/status?taskId=${taskId}`);
         
         if (!response.ok) {
@@ -374,11 +378,13 @@ export default function ListenPage() {
         console.log(`[UI] Task status response:`, data);
         
         // Check for status in the correct location
-        // It could be in data.data.response.status or data.data.status
         const status = data.data?.response?.status || data.data?.status;
         
         if (status) {
-          setGenerationStatus(status);
+          // Update the status in our pending generations list
+          setPendingGenerations(prev => prev.map(gen => 
+            gen.taskId === taskId ? { ...gen, status } : gen
+          ));
           
           // If the task is complete, stop polling and refresh tracks
           if (status === 'SUCCESS' || status === 'FIRST_SUCCESS') {
@@ -414,8 +420,9 @@ export default function ListenPage() {
             }
               
             clearInterval(intervalId);
-            setPollingInterval(null);
-            setPollingTaskId(null);
+            
+            // Remove this interval from our ref
+            delete intervalsRef.current[taskId];
               
             // Refresh the tracks list
             console.log(`[UI] Refreshing tracks list`);
@@ -430,24 +437,31 @@ export default function ListenPage() {
                 new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
               );
                 
-              // Set the first track as current
-              console.log(`[UI] Setting current track to newest track: "${sortedTracks[0].name}"`);
-              setCurrentTrack(sortedTracks[0]);
-              setIsPlaying(true); // Auto-play the new track
-                
-              // Show a message about multiple tracks
-              if (trackData && trackData.length > 1) {
-                setTrackCreated(true);
+              // Set the first track as current if we don't have one yet
+              if (!currentTrack) {
+                console.log(`[UI] Setting current track to newest track: "${sortedTracks[0].name}"`);
+                setCurrentTrack(sortedTracks[0]);
+                setIsPlaying(true); // Auto-play the new track
               }
             }
+            
+            // Remove this generation from the pending list after a short delay
+            setTimeout(() => {
+              setPendingGenerations(prev => prev.filter(gen => gen.taskId !== taskId));
+            }, 3000);
           } else if (status === 'CREATE_TASK_FAILED' || status === 'GENERATE_AUDIO_FAILED' || 
                     status === 'CALLBACK_EXCEPTION' || status === 'SENSITIVE_WORD_ERROR') {
             // If the task failed, stop polling
             console.error(`[UI] Music generation failed with status: ${status}`);
             clearInterval(intervalId);
-            setPollingInterval(null);
-            setPollingTaskId(null);
-            setTrackError(`Music generation failed: ${data.data.response?.errorMessage || status}`);
+            
+            // Remove this interval from our ref
+            delete intervalsRef.current[taskId];
+            
+            // Keep it in the list with the error status for a while, then remove
+            setTimeout(() => {
+              setPendingGenerations(prev => prev.filter(gen => gen.taskId !== taskId));
+            }, 5000);
           }
         }
       } catch (error) {
@@ -455,7 +469,8 @@ export default function ListenPage() {
       }
     }, 10000); // Poll every 10 seconds
     
-    setPollingInterval(intervalId);
+    // Store the interval ID in our ref
+    intervalsRef.current[taskId] = intervalId;
   };
 
   const handleCreateTrack = async () => {
@@ -465,10 +480,9 @@ export default function ListenPage() {
     console.log(`[UI] Message content: ${newMessage}`);
     console.log(`[UI] Instrumental: ${instrumental}`);
     
-    setCreatingTrack(true);
-    setTrackError(null);
-    setTrackCreated(false);
-    setGenerationStatus(null);
+    // Store the message content before clearing it
+    const messageContent = newMessage;
+    setNewMessage('');
     
     try {
       console.log(`[UI] Sending POST request to /api/foundries/${foundryId}/tracks`);
@@ -478,7 +492,7 @@ export default function ListenPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          content: newMessage,
+          content: messageContent,
           instrumental: instrumental,
         }),
       });
@@ -495,23 +509,31 @@ export default function ListenPage() {
       console.log(`[UI] Track creation successful:`, data);
       console.log(`[UI] Response data:`, data);
       console.log(`[UI] music_task_id:`, data.music_task_id);
-      console.log(`[UI] music_task_id:`, data.music_task_id);
-      
-      setTrackCreated(true);
-      setNewMessage('');
       
       // If we have a task ID, start polling for status
       if (data.music_task_id) {
         console.log(`[UI] Starting to poll for task ID: ${data.music_task_id}`);
-        pollMusicGenerationStatus(data.music_task_id);
+        // Extract title from the response if available
+        const title = data.music_parameters?.title || 'New Track';
+        pollMusicGenerationStatus(data.music_task_id, title);
       } else {
         console.warn(`[UI] No music_task_id found in response, polling will not start`);
       }
     } catch (err) {
       console.error('[UI] Error creating track:', err);
-      setTrackError('Failed to create track. Please try again.');
-    } finally {
-      setCreatingTrack(false);
+      // Show error in the UI
+      setPendingGenerations(prev => [...prev, {
+        id: `error-${Date.now()}`,
+        taskId: 'error',
+        title: 'Error',
+        status: 'ERROR',
+        createdAt: new Date().toISOString()
+      }]);
+      
+      // Remove the error after a few seconds
+      setTimeout(() => {
+        setPendingGenerations(prev => prev.filter(gen => gen.taskId === 'error'));
+      }, 5000);
     }
   };
   
@@ -584,7 +606,7 @@ export default function ListenPage() {
               <div className="flex-1 flex items-center justify-center">
                 <p>Loading tracks...</p>
               </div>
-            ) : tracks.length === 0 ? (
+            ) : tracks.length === 0 && pendingGenerations.length === 0 ? (
               <div className="flex-1 flex items-center justify-center text-center">
                 <div>
                   <div className="w-48 h-48 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto mb-6 flex items-center justify-center">
@@ -596,9 +618,91 @@ export default function ListenPage() {
                   </p>
                 </div>
               </div>
+            ) : pendingGenerations.length > 0 && !currentTrack ? (
+              <div className="flex-1 flex flex-col">
+                <div className="text-center mb-6">
+                  <div className="w-48 h-48 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto mb-6 flex items-center justify-center animate-pulse">
+                    <span className="text-4xl">🎵</span>
+                  </div>
+                  <p className="text-lg font-medium">Generating Music</p>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    {pendingGenerations[0].title}
+                  </p>
+                  
+                  <div className="mt-6">
+                    <div className="space-y-4">
+                      {pendingGenerations.map(gen => (
+                        <div key={gen.id} className="bg-black/10 dark:bg-white/10 p-4 rounded-lg">
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="font-medium">{gen.title}</span>
+                            <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                              {gen.status}
+                            </span>
+                          </div>
+                          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                            <div 
+                              className={`h-2.5 rounded-full ${
+                                gen.status === 'SUCCESS' || gen.status === 'FIRST_SUCCESS' 
+                                  ? 'bg-green-600 w-full' 
+                                  : gen.status.includes('FAILED') || gen.status === 'ERROR'
+                                    ? 'bg-red-600 w-full'
+                                    : 'bg-blue-600 animate-pulse w-full'
+                              }`}
+                            ></div>
+                          </div>
+                          <p className="text-xs mt-2 text-gray-500 dark:text-gray-400">
+                            {gen.status === 'PENDING' && 'Music generation in progress... (this may take a few minutes)'}
+                            {gen.status === 'TEXT_SUCCESS' && 'Lyrics generated, creating music...'}
+                            {gen.status === 'FIRST_SUCCESS' && 'First track generated, creating variations...'}
+                            {gen.status === 'SUCCESS' && 'Music generation complete!'}
+                            {['CREATE_TASK_FAILED', 'GENERATE_AUDIO_FAILED', 'CALLBACK_EXCEPTION', 'SENSITIVE_WORD_ERROR', 'ERROR'].includes(gen.status) && 
+                              `Music generation failed: ${gen.status}`}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
             ) : (
               <div className="flex-1 flex flex-col">
                 <div className="flex-1 overflow-y-auto mb-4">
+                  {/* Show pending generations at the top if any exist */}
+                  {pendingGenerations.length > 0 && (
+                    <div className="mb-6 space-y-4">
+                      <h3 className="font-semibold">Generating Tracks</h3>
+                      {pendingGenerations.map(gen => (
+                        <div key={gen.id} className="bg-black/10 dark:bg-white/10 p-4 rounded-lg">
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="font-medium">{gen.title}</span>
+                            <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                              {gen.status}
+                            </span>
+                          </div>
+                          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                            <div 
+                              className={`h-2.5 rounded-full ${
+                                gen.status === 'SUCCESS' || gen.status === 'FIRST_SUCCESS' 
+                                  ? 'bg-green-600 w-full' 
+                                  : gen.status.includes('FAILED') || gen.status === 'ERROR'
+                                    ? 'bg-red-600 w-full'
+                                    : 'bg-blue-600 animate-pulse w-full'
+                              }`}
+                            ></div>
+                          </div>
+                          <p className="text-xs mt-2 text-gray-500 dark:text-gray-400">
+                            {gen.status === 'PENDING' && 'Music generation in progress... (this may take a few minutes)'}
+                            {gen.status === 'TEXT_SUCCESS' && 'Lyrics generated, creating music...'}
+                            {gen.status === 'FIRST_SUCCESS' && 'First track generated, creating variations...'}
+                            {gen.status === 'SUCCESS' && 'Music generation complete!'}
+                            {['CREATE_TASK_FAILED', 'GENERATE_AUDIO_FAILED', 'CALLBACK_EXCEPTION', 'SENSITIVE_WORD_ERROR', 'ERROR'].includes(gen.status) && 
+                              `Music generation failed: ${gen.status}`}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
                   <div className="text-center mb-6">
                     <div className="w-48 h-48 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto mb-6 flex items-center justify-center">
                       <span className="text-4xl">🎵</span>
@@ -866,7 +970,7 @@ export default function ListenPage() {
               <button
                 type="submit"
                 className="bg-foreground text-background px-4 py-2 rounded-none font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
-                disabled={sending || creatingTrack || !newMessage.trim()}
+                disabled={sending || !newMessage.trim()}
               >
                 {sending ? 'Sending...' : 'Send'}
               </button>
@@ -880,39 +984,7 @@ export default function ListenPage() {
               </button>
             </div>
             
-            {trackError && (
-              <div className="text-red-500 text-sm mt-1">{trackError}</div>
-            )}
-            
-            {trackCreated && (
-              <div className="text-green-500 text-sm mt-1">
-                {pollingTaskId && generationStatus === 'SUCCESS' && tracks.length > 1
-                  ? `Multiple tracks created successfully! Check the music player to listen to all versions.`
-                  : 'Track created successfully! It will appear in the music player soon.'}
-              </div>
-            )}
-            
-            {/* Show generation status if polling */}
-            {pollingTaskId && generationStatus && (
-              <div className="mt-2 text-sm">
-                <p>
-                  {generationStatus === 'PENDING' && 'Music generation in progress... (this may take a few minutes)'}
-                  {generationStatus === 'TEXT_SUCCESS' && 'Lyrics generated, creating music...'}
-                  {generationStatus === 'FIRST_SUCCESS' && 'First track generated, creating variations...'}
-                  {generationStatus === 'SUCCESS' && 'Music generation complete!'}
-                  {['CREATE_TASK_FAILED', 'GENERATE_AUDIO_FAILED', 'CALLBACK_EXCEPTION', 'SENSITIVE_WORD_ERROR'].includes(generationStatus) && 
-                    `Music generation failed: ${generationStatus}`}
-                </p>
-                {['PENDING', 'TEXT_SUCCESS', 'FIRST_SUCCESS'].includes(generationStatus) && (
-                  <div className="mt-1 w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
-                    <div 
-                      className="bg-blue-600 h-2.5 rounded-full animate-pulse" 
-                      style={{ width: '100%' }}
-                    ></div>
-                  </div>
-                )}
-              </div>
-            )}
+            {/* Status indicators moved to the music player area */}
           </form>
         </div>
       </main>
