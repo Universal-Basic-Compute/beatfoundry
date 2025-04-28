@@ -124,10 +124,16 @@ export async function POST(request, { params }) {
         // Continue anyway, don't fail the request
       }
       
-      // Use the server's URL for the callback
-      const host = request.headers.get('host');
-      const protocol = host?.includes('localhost') ? 'http' : 'https';
-      const callbackUrl = `${protocol}://${host}/api/foundries/${foundryId}/tracks/callback`;
+      // Use the production URL for the callback in production
+      let callbackUrl;
+      if (process.env.NODE_ENV === 'production') {
+        callbackUrl = `https://beatsfoundry.vercel.app/api/foundries/${foundryId}/tracks/callback`;
+      } else {
+        // For development, use the server's URL
+        const host = request.headers.get('host');
+        const protocol = host?.includes('localhost') ? 'http' : 'https';
+        callbackUrl = `${protocol}://${host}/api/foundries/${foundryId}/tracks/callback`;
+      }
       console.log(`[TRACKS] Callback URL for SUNO API: ${callbackUrl}`);
       
       console.log(`[TRACKS] Calling SUNO API to generate music`);

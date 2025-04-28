@@ -28,7 +28,10 @@ export async function generateMusic(
 ) {
   console.log(`[SUNO] Generating music with SUNO API: "${title}"`);
   console.log(`[SUNO] Parameters - Style: "${style}", Instrumental: ${instrumental}`);
-  console.log(`[SUNO] Callback URL: ${callbackUrl}`);
+  
+  // Use the provided callback URL or fall back to the production URL if needed
+  const finalCallbackUrl = callbackUrl || `https://beatsfoundry.vercel.app/api/foundries/tracks/callback`;
+  console.log(`[SUNO] Callback URL: ${finalCallbackUrl}`);
   console.log(`[SUNO] Prompt/Lyrics: "${prompt.substring(0, 100)}${prompt.length > 100 ? '...' : ''}"`);
   
   const requestBody: SunoGenerateRequest = {
@@ -38,7 +41,7 @@ export async function generateMusic(
     customMode: true,
     instrumental,
     model: 'V4',
-    callBackUrl: callbackUrl
+    callBackUrl: finalCallbackUrl
   };
   
   console.log('[SUNO] API request body:', JSON.stringify(requestBody, null, 2));

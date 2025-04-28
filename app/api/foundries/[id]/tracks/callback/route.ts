@@ -6,6 +6,7 @@ import { createTrack } from '@/lib/airtable';
 export async function POST(request, { params }) {
   const foundryId = params.id;
   console.log(`[CALLBACK] Received SUNO API callback for foundry ID: ${foundryId}`);
+  console.log(`[CALLBACK] Request URL: ${request.url}`);
   
   try {
     const body = await request.json();
