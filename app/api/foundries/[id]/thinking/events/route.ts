@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { thinkingEvents } from '../webhook/route';
+import thinkingEvents from '@/lib/thinking-events';
 
 // This endpoint will provide Server-Sent Events (SSE) for real-time thinking updates
 export async function GET(request: NextRequest, { params }: any) {

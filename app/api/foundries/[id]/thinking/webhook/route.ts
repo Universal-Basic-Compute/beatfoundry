@@ -1,10 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { EventEmitter } from 'events';
-
-// Create a global event emitter to broadcast thinking updates
-// This is a simple approach for development - in production you might use Redis or another solution
-export const thinkingEvents = new EventEmitter();
-thinkingEvents.setMaxListeners(100); // Increase max listeners to avoid warnings
+import thinkingEvents from '@/lib/thinking-events';
 
 export async function POST(request: NextRequest, { params }: any) {
   const foundryId = params.id;
