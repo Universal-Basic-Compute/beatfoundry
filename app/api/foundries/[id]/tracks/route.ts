@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendChannelMessage } from '@/lib/kinos-messages-api';
 import { generateMusic } from '@/lib/suno-api';
-import { getTracksByFoundryId } from '@/lib/airtable';
+import { getTracksByFoundryId, createTrack } from '@/lib/airtable';
 
 // Add a GET method to fetch tracks
 export async function GET(
