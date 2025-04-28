@@ -16,8 +16,7 @@ export async function createKin(name: string, templateOverride?: string) {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      // Add any required authentication headers here
-      // 'Authorization': `Bearer ${process.env.KINOS_API_KEY}`,
+      'Authorization': `Bearer ${process.env.KINOS_API_KEY}`,
     },
     body: JSON.stringify(requestBody),
   });
