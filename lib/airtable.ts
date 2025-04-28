@@ -78,3 +78,17 @@ export async function foundryExists(name: string) {
     throw error;
   }
 }
+
+export async function getFoundryById(id: string) {
+  try {
+    const record = await foundryTable.find(id);
+    return {
+      id: record.id,
+      name: record.get('Name') as string,
+      description: record.get('Description') as string,
+    };
+  } catch (error) {
+    console.error('Error fetching foundry by ID from Airtable:', error);
+    throw error;
+  }
+}
