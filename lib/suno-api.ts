@@ -81,6 +81,7 @@ export async function generateMusic(
     let data;
     try {
       data = JSON.parse(responseText);
+      console.log('[SUNO] API response data (parsed):', JSON.stringify(data, null, 2));
     } catch (parseError) {
       console.error(`[SUNO] Error parsing response JSON:`, parseError);
       throw new Error(`Failed to parse response: ${responseText}`);
@@ -91,7 +92,10 @@ export async function generateMusic(
       throw new Error(data.msg || `Failed to generate music: ${response.status}`);
     }
     
-    console.log('[SUNO] API response data:', data);
+    // Log the task_id specifically since that's important for tracking
+    if (data.data && data.data.task_id) {
+      console.log(`[SUNO] Generated task_id: ${data.data.task_id}`);
+    }
     
     return data;
   } catch (error) {
