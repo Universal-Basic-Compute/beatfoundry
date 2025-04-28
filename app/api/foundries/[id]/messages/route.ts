@@ -1,7 +1,10 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { getMessages, sendMessage } from '@/lib/kinos-messages-api';
 
-export async function GET(request, { params }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   const foundryId = params.id;
   const url = new URL(request.url);
   
@@ -49,7 +52,10 @@ export async function GET(request, { params }) {
   }
 }
 
-export async function POST(request, { params }) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   const foundryId = params.id;
   const body = await request.json();
   
