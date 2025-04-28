@@ -114,16 +114,17 @@ export async function POST(request, { params }) {
                     title: uniqueTitle
                   }),
                 });
-              
-              if (!downloadResponse.ok) {
-                console.error(`[CALLBACK] Error downloading track:`, await downloadResponse.text());
-              } else {
-                const downloadData = await downloadResponse.json();
-                console.log(`[CALLBACK] Successfully downloaded track to ${downloadData.url}`);
+                
+                if (!downloadResponse.ok) {
+                  console.error(`[CALLBACK] Error downloading track:`, await downloadResponse.text());
+                } else {
+                  const downloadData = await downloadResponse.json();
+                  console.log(`[CALLBACK] Successfully downloaded track to ${downloadData.url}`);
+                }
+              } catch (downloadError) {
+                console.error(`[CALLBACK] Error downloading track:`, downloadError);
+                // Continue anyway, we still have the original URL
               }
-            } catch (downloadError) {
-              console.error(`[CALLBACK] Error downloading track:`, downloadError);
-              // Continue anyway, we still have the original URL
             }
           } catch (trackError) {
             console.error('[CALLBACK] Error storing track in Airtable:', trackError);
