@@ -53,6 +53,14 @@ export default function ListenPage() {
   const [instrumental, setInstrumental] = useState(false);
   const [trackMenuOpen, setTrackMenuOpen] = useState<string | null>(null);
   
+  // Add state for autonomous thinking
+  const [autonomousMode, setAutonomousMode] = useState(false);
+  const [thinking, setThinking] = useState(false);
+  const [thoughts, setThoughts] = useState<Array<{
+    step: string;
+    content: any;
+  }>>([]);
+  
   // Add state for tracks
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loadingTracks, setLoadingTracks] = useState(true);
@@ -293,6 +301,73 @@ export default function ListenPage() {
       audio.removeEventListener('loadedmetadata', updateDuration);
     };
   }, []);
+  
+  // Add function to trigger autonomous thinking
+  const triggerThinking = async () => {
+    if (thinking) return;
+    
+    setThinking(true);
+    setThoughts([]);
+    
+    try {
+      console.log(`[UI] Triggering autonomous thinking for foundry ID: ${foundryId}`);
+      const response = await fetch(`/api/foundries/${foundryId}/thinking`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          iterations: 1
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to trigger thinking: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log(`[UI] Autonomous thinking response:`, data);
+      
+      if (data.steps && Array.isArray(data.steps)) {
+        setThoughts(data.steps);
+        
+        // Add the final thought as a message from the assistant
+        const kinResponse = data.steps.find(step => step.step === "kin_response");
+        if (kinResponse && kinResponse.content) {
+          // Refresh messages to show the new thought
+          const messagesResponse = await fetch(`/api/foundries/${foundryId}/messages`);
+          if (messagesResponse.ok) {
+            const messagesData = await messagesResponse.json();
+            setMessages(messagesData.messages || []);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('[UI] Error triggering autonomous thinking:', error);
+    } finally {
+      setThinking(false);
+      
+      // If autonomous mode is still on, trigger thinking again after a delay
+      if (autonomousMode) {
+        setTimeout(() => {
+          if (autonomousMode) {
+            triggerThinking();
+          }
+        }, 5000); // Wait 5 seconds before triggering again
+      }
+    }
+  };
+  
+  // Add effect to start/stop autonomous thinking when the toggle changes
+  useEffect(() => {
+    if (autonomousMode) {
+      triggerThinking();
+    }
+    
+    return () => {
+      // Clean up if needed
+    };
+  }, [autonomousMode]);
   
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -970,6 +1045,24 @@ export default function ListenPage() {
                         {instrumental ? 'Generate music without lyrics' : 'Generate music with lyrics'}
                       </p>
                     </div>
+                    
+                    {/* Add the autonomous thinking toggle */}
+                    <div className="px-4 py-2 text-sm text-gray-700 dark:text-gray-200 border-t border-gray-200 dark:border-gray-700">
+                      <div className="flex items-center justify-between">
+                        <span>Create Autonomously</span>
+                        <button 
+                          onClick={() => setAutonomousMode(!autonomousMode)}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full ${autonomousMode ? 'bg-purple-600' : 'bg-gray-300 dark:bg-gray-600'}`}
+                        >
+                          <span 
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${autonomousMode ? 'translate-x-6' : 'translate-x-1'}`} 
+                          />
+                        </button>
+                      </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        {autonomousMode ? 'AI will generate thoughts autonomously' : 'AI will respond to your messages'}
+                      </p>
+                    </div>
                   </div>
                 </div>
               )}
@@ -998,34 +1091,90 @@ export default function ListenPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                {messages.map((message, index) => (
-                  <div 
-                    key={message.id || `message-${index}`} 
-                    className={`p-3 rounded-lg ${
-                      message.role === 'user' 
-                        ? 'bg-foreground text-background ml-8' 
-                        : 'bg-black/10 dark:bg-white/20 mr-8'
-                    }`}
-                  >
-                    <div className="font-medium mb-1 text-sm">
-                      {message.role === 'user' ? 'You' : foundry?.name || 'AI Musician'}
-                    </div>
-                    <div className={message.role === 'user' ? 'text-sm' : 'prose dark:prose-invert prose-sm max-w-none text-sm'}>
-                      {message.role === 'user' ? (
-                        <div>{message.content}</div>
-                      ) : (
-                        <ReactMarkdown>{message.content}</ReactMarkdown>
+                {messages.map((message, index) => {
+                  // Find any thoughts that might be related to this message
+                  const messageThoughts = thinking && message.role === 'assistant' && index === messages.length - 1 
+                    ? thoughts 
+                    : [];
+                    
+                  return (
+                    <div key={message.id || `message-${index}`}>
+                      <div 
+                        className={`p-3 rounded-lg ${
+                          message.role === 'user' 
+                            ? 'bg-foreground text-background ml-8' 
+                            : 'bg-black/10 dark:bg-white/20 mr-8'
+                        }`}
+                      >
+                        <div className="font-medium mb-1 text-sm">
+                          {message.role === 'user' ? 'You' : foundry?.name || 'AI Musician'}
+                        </div>
+                        <div className={message.role === 'user' ? 'text-sm' : 'prose dark:prose-invert prose-sm max-w-none text-sm'}>
+                          {message.role === 'user' ? (
+                            <div>{message.content}</div>
+                          ) : (
+                            <ReactMarkdown>{message.content}</ReactMarkdown>
+                          )}
+                        </div>
+                        <div className="text-xs opacity-70 mt-1">
+                          {new Date(message.timestamp).toLocaleTimeString()}
+                        </div>
+                      </div>
+                      
+                      {/* Display thoughts below the assistant's message */}
+                      {message.role === 'assistant' && messageThoughts.length > 0 && (
+                        <div className="ml-4 mr-12 mt-1 mb-3 text-xs text-gray-500 dark:text-gray-400 space-y-1">
+                          {messageThoughts.map((thought, i) => {
+                            // Skip the kin_response step as it's already shown in the message
+                            if (thought.step === 'kin_response') return null;
+                            
+                            return (
+                              <div key={`thought-${i}`} className="bg-gray-100 dark:bg-gray-800 p-2 rounded">
+                                <div className="font-medium mb-1">
+                                  {thought.step === 'keywords' ? 'Keywords' : 
+                                   thought.step === 'dream' ? 'Dream' : 
+                                   thought.step === 'daydreaming' ? 'Daydreaming' : 
+                                   thought.step === 'initiative' ? 'Initiative' : 
+                                   thought.step.charAt(0).toUpperCase() + thought.step.slice(1)}
+                                </div>
+                                {thought.step === 'keywords' ? (
+                                  <div>
+                                    {thought.content.relevant_keywords && (
+                                      <div><span className="font-medium">Keywords:</span> {thought.content.relevant_keywords.join(', ')}</div>
+                                    )}
+                                    {thought.content.emotions && (
+                                      <div><span className="font-medium">Emotions:</span> {thought.content.emotions.join(', ')}</div>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <div>{thought.content}</div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
                       )}
                     </div>
-                    <div className="text-xs opacity-70 mt-1">
-                      {new Date(message.timestamp).toLocaleTimeString()}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
                 {sending && (
                   <div className="bg-black/10 dark:bg-white/20 p-3 rounded-lg mr-8">
                     <div className="font-medium mb-1 text-sm">
                       {foundry?.name || 'AI Musician'}
+                    </div>
+                    <div className="flex space-x-1">
+                      <span className="animate-bounce">.</span>
+                      <span className="animate-bounce" style={{ animationDelay: '0.2s' }}>.</span>
+                      <span className="animate-bounce" style={{ animationDelay: '0.4s' }}>.</span>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Show thinking indicator when in autonomous mode */}
+                {autonomousMode && thinking && (
+                  <div className="bg-black/10 dark:bg-white/20 p-3 rounded-lg mr-8">
+                    <div className="font-medium mb-1 text-sm">
+                      {foundry?.name || 'AI Musician'} is thinking...
                     </div>
                     <div className="flex space-x-1">
                       <span className="animate-bounce">.</span>

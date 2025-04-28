@@ -116,6 +116,51 @@ export async function getMessages(
   }
 }
 
+export async function triggerAutonomousThinking(
+  kinId: string,
+  options?: {
+    iterations?: number;
+    waitTime?: number;
+    sync?: boolean;
+    webhookUrl?: string;
+  }
+) {
+  const url = `${KINOS_API_BASE_URL}/blueprints/${BLUEPRINT_ID}/kins/${kinId}/autonomous_thinking`;
+  
+  console.log(`Triggering autonomous thinking: ${url}`);
+  
+  const requestBody: any = {
+    sync: true, // Default to sync mode for our implementation
+  };
+  
+  if (options?.iterations) requestBody.iterations = options.iterations;
+  if (options?.waitTime) requestBody.wait_time = options.waitTime;
+  if (options?.sync !== undefined) requestBody.sync = options.sync;
+  if (options?.webhookUrl) requestBody.webhook_url = options.webhookUrl;
+  
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.KINOS_API_KEY}`,
+      },
+      body: JSON.stringify(requestBody),
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || `Failed to trigger autonomous thinking: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error triggering autonomous thinking:', error);
+    throw error;
+  }
+}
+
 export async function sendMessage(
   kinId: string, 
   content: string, 
