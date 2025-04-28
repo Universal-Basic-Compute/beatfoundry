@@ -46,6 +46,7 @@ export default function ListenPage() {
   const [generationStatus, setGenerationStatus] = useState<string | null>(null);
   const [showOptions, setShowOptions] = useState(false);
   const [instrumental, setInstrumental] = useState(false);
+  const [trackMenuOpen, setTrackMenuOpen] = useState<string | null>(null);
   
   // Add state for tracks
   const [tracks, setTracks] = useState<Track[]>([]);
@@ -240,13 +241,17 @@ export default function ListenPage() {
       if (showOptions && !(event.target as Element).closest('.options-menu')) {
         setShowOptions(false);
       }
+      
+      if (trackMenuOpen && !(event.target as Element).closest('.track-menu')) {
+        setTrackMenuOpen(null);
+      }
     }
     
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [showOptions]);
+  }, [showOptions, trackMenuOpen]);
   
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -483,6 +488,20 @@ export default function ListenPage() {
     setIsPlaying(true);
   };
   
+  const handleDownloadTrack = async (track: Track) => {
+    try {
+      // Create a temporary anchor element
+      const link = document.createElement('a');
+      link.href = track.url;
+      link.download = `${track.name}.mp3`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Error downloading track:', error);
+    }
+  };
+  
   const togglePlayPause = () => {
     if (audioRef.current) {
       if (isPlaying) {
@@ -607,14 +626,56 @@ export default function ListenPage() {
                     {tracks.map((track, index) => (
                       <div 
                         key={track.id || `track-${index}`}
-                        className={`p-3 rounded-lg cursor-pointer hover:bg-black/10 dark:hover:bg-white/10 ${
+                        className={`p-3 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 ${
                           currentTrack?.id === track.id ? 'bg-black/10 dark:bg-white/10' : ''
-                        }`}
-                        onClick={() => playTrack(track)}
+                        } relative`}
                       >
-                        <div className="font-medium">{track.name}</div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400 truncate">
-                          {new Date(track.createdAt).toLocaleDateString()}
+                        <div className="flex justify-between items-start">
+                          <div 
+                            className="flex-1 cursor-pointer" 
+                            onClick={() => playTrack(track)}
+                          >
+                            <div className="font-medium">{track.name}</div>
+                            <div className="text-sm text-gray-600 dark:text-gray-400 truncate">
+                              {new Date(track.createdAt).toLocaleDateString()}
+                            </div>
+                          </div>
+                          
+                          {/* Track options menu */}
+                          <div className="relative">
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setTrackMenuOpen(trackMenuOpen === track.id ? null : track.id);
+                              }}
+                              className="p-1 rounded-full hover:bg-black/10 dark:hover:bg-white/10"
+                              aria-label="Track options"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="12" cy="12" r="1"></circle>
+                                <circle cx="12" cy="5" r="1"></circle>
+                                <circle cx="12" cy="19" r="1"></circle>
+                              </svg>
+                            </button>
+                            
+                            {trackMenuOpen === track.id && (
+                              <div className="absolute right-0 mt-1 w-36 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 z-10 track-menu">
+                                <div className="py-1" role="menu" aria-orientation="vertical">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDownloadTrack(track);
+                                      setTrackMenuOpen(null);
+                                    }}
+                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                    role="menuitem"
+                                  >
+                                    Download
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     ))}
