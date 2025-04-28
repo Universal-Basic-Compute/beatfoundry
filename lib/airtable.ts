@@ -31,14 +31,48 @@ export type TrackReactions = {
   '❌'?: number; // Bad track/has errors
 };
 
+// Add this type definition for foundry reactions
+export type FoundryReactions = {
+  '🏆'?: number; // Hit Maker (consistently creates popular tracks)
+  '💫'?: number; // Innovator (pioneering new sounds/techniques)
+  '🎭'?: number; // Mood Master (exceptional at emotional expression)
+  '🌐'?: number; // Genre Blender (skillfully combines different styles)
+  '🧠'?: number; // Complex Composer (creates sophisticated arrangements)
+  '🎛️'?: number; // Production Ace (outstanding sound quality/mixing)
+  '🔄'?: number; // Evolution Expert (shows remarkable artistic growth)
+  '🎹'?: number; // Melody Maestro (creates memorable melodic lines)
+  '🥁'?: number; // Rhythm King/Queen (exceptional beat programming)
+  '🌟'?: number; // Rising Star (showing exceptional promise/potential)
+};
+
 export async function getFoundries() {
   try {
     const records = await foundryTable.select().all();
-    return records.map(record => ({
-      id: record.id,
-      name: record.get('Name') as string,
-      description: record.get('Description') as string,
-    }));
+    return records.map(record => {
+      // Get the reactions field
+      let reactions = {};
+      const reactionsField = record.get('Reactions');
+      
+      // Parse reactions if they exist
+      if (reactionsField) {
+        if (typeof reactionsField === 'string') {
+          try {
+            reactions = JSON.parse(reactionsField);
+          } catch (parseError) {
+            console.error('[AIRTABLE] Error parsing foundry reactions JSON:', parseError);
+          }
+        } else if (typeof reactionsField === 'object') {
+          reactions = reactionsField;
+        }
+      }
+      
+      return {
+        id: record.id,
+        name: record.get('Name') as string,
+        description: record.get('Description') as string,
+        reactions: reactions,
+      };
+    });
   } catch (error) {
     console.error('Error fetching foundries from Airtable:', error);
     throw error;
@@ -100,10 +134,29 @@ export async function foundryExists(name: string) {
 export async function getFoundryById(id: string) {
   try {
     const record = await foundryTable.find(id);
+    
+    // Get the reactions field
+    let reactions = {};
+    const reactionsField = record.get('Reactions');
+    
+    // Parse reactions if they exist
+    if (reactionsField) {
+      if (typeof reactionsField === 'string') {
+        try {
+          reactions = JSON.parse(reactionsField);
+        } catch (parseError) {
+          console.error('[AIRTABLE] Error parsing foundry reactions JSON:', parseError);
+        }
+      } else if (typeof reactionsField === 'object') {
+        reactions = reactionsField;
+      }
+    }
+    
     return {
       id: record.id,
       name: record.get('Name') as string,
       description: record.get('Description') as string,
+      reactions: reactions,
     };
   } catch (error) {
     console.error('Error fetching foundry by ID from Airtable:', error);
@@ -355,6 +408,77 @@ export async function updateTrackReactions(trackId: string, reactions: TrackReac
     return reactions;
   } catch (error) {
     console.error('[AIRTABLE] Error updating track reactions:', error);
+    throw error;
+  }
+}
+
+// Get reactions for a foundry
+export async function getFoundryReactions(foundryId: string): Promise<FoundryReactions> {
+  console.log(`[AIRTABLE] Getting reactions for foundry ID: ${foundryId}`);
+  
+  try {
+    const record = await foundryTable.find(foundryId);
+    const reactionsField = record.get('Reactions');
+    
+    // If the field exists and is a string, parse it as JSON
+    if (reactionsField && typeof reactionsField === 'string') {
+      try {
+        return JSON.parse(reactionsField);
+      } catch (parseError) {
+        console.error('[AIRTABLE] Error parsing foundry reactions JSON:', parseError);
+        return {};
+      }
+    }
+    
+    // If the field exists and is already an object, return it
+    if (reactionsField && typeof reactionsField === 'object') {
+      return reactionsField as FoundryReactions;
+    }
+    
+    // If the field doesn't exist or is empty, return an empty object
+    return {};
+  } catch (error) {
+    console.error('[AIRTABLE] Error getting foundry reactions:', error);
+    throw error;
+  }
+}
+
+// Update reactions for a foundry
+export async function updateFoundryReactions(foundryId: string, reactions: FoundryReactions): Promise<FoundryReactions> {
+  console.log(`[AIRTABLE] Updating reactions for foundry ID: ${foundryId}`);
+  console.log(`[AIRTABLE] New reactions:`, reactions);
+  
+  try {
+    const updatedRecord = await foundryTable.update([
+      {
+        id: foundryId,
+        fields: {
+          Reactions: JSON.stringify(reactions),
+        },
+      },
+    ]);
+    
+    const updatedReactions = updatedRecord[0].get('Reactions');
+    
+    // Parse the reactions if they're stored as a string
+    if (typeof updatedReactions === 'string') {
+      try {
+        return JSON.parse(updatedReactions);
+      } catch (parseError) {
+        console.error('[AIRTABLE] Error parsing updated foundry reactions JSON:', parseError);
+        return reactions; // Return the input reactions as a fallback
+      }
+    }
+    
+    // If the reactions are already an object, return them
+    if (typeof updatedReactions === 'object') {
+      return updatedReactions as FoundryReactions;
+    }
+    
+    // If all else fails, return the input reactions
+    return reactions;
+  } catch (error) {
+    console.error('[AIRTABLE] Error updating foundry reactions:', error);
     throw error;
   }
 }

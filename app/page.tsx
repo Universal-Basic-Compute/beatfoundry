@@ -7,6 +7,18 @@ type Foundry = {
   id: string;
   name: string;
   description: string;
+  reactions?: {
+    '🏆'?: number;
+    '💫'?: number;
+    '🎭'?: number;
+    '🌐'?: number;
+    '🧠'?: number;
+    '🎛️'?: number;
+    '🔄'?: number;
+    '🎹'?: number;
+    '🥁'?: number;
+    '🌟'?: number;
+  };
 };
 
 export default function Home() {
@@ -18,10 +30,41 @@ export default function Home() {
   const [newFoundry, setNewFoundry] = useState({ name: '', description: '' });
   const [formError, setFormError] = useState<string | null>(null);
   const [formSuccess, setFormSuccess] = useState<string | null>(null);
+  
+  // Define the reaction types and their descriptions
+  const foundryReactionTypes = [
+    { emoji: '🏆', description: 'Hit Maker (consistently creates popular tracks)' },
+    { emoji: '💫', description: 'Innovator (pioneering new sounds/techniques)' },
+    { emoji: '🎭', description: 'Mood Master (exceptional at emotional expression)' },
+    { emoji: '🌐', description: 'Genre Blender (skillfully combines different styles)' },
+    { emoji: '🧠', description: 'Complex Composer (creates sophisticated arrangements)' },
+    { emoji: '🎛️', description: 'Production Ace (outstanding sound quality/mixing)' },
+    { emoji: '🔄', description: 'Evolution Expert (shows remarkable artistic growth)' },
+    { emoji: '🎹', description: 'Melody Maestro (creates memorable melodic lines)' },
+    { emoji: '🥁', description: 'Rhythm King/Queen (exceptional beat programming)' },
+    { emoji: '🌟', description: 'Rising Star (showing exceptional promise/potential)' }
+  ];
+  
+  // Add state for reaction popup
+  const [showReactionPopup, setShowReactionPopup] = useState<string | null>(null);
 
   useEffect(() => {
     fetchFoundries();
   }, []);
+  
+  // Add click outside handler for reaction popup
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (showReactionPopup && !(event.target as Element).closest('.reaction-popup')) {
+        setShowReactionPopup(null);
+      }
+    }
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showReactionPopup]);
 
   const fetchFoundries = async () => {
     try {
@@ -35,6 +78,39 @@ export default function Home() {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Function to add a reaction
+  const addFoundryReaction = async (foundryId: string, reaction: string) => {
+    try {
+      const response = await fetch(`/api/foundries/${foundryId}/reactions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ reaction }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to add reaction');
+      }
+      
+      const updatedReactions = await response.json();
+      
+      // Update the foundry in the local state
+      setFoundries(prevFoundries => 
+        prevFoundries.map(foundry => 
+          foundry.id === foundryId 
+            ? { ...foundry, reactions: updatedReactions } 
+            : foundry
+        )
+      );
+      
+      // Close the reaction popup
+      setShowReactionPopup(null);
+    } catch (error) {
+      console.error('Error adding foundry reaction:', error);
     }
   };
 
@@ -157,7 +233,7 @@ export default function Home() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {foundries.map((foundry) => (
-              <div key={foundry.id} className="border border-border rounded-xl p-6 hover:shadow-md transition-shadow bg-card">
+              <div key={foundry.id} className="border border-border rounded-xl p-6 hover:shadow-md transition-shadow bg-card relative">
                 <div className="flex items-center mb-3">
                   <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center mr-3 font-semibold">
                     {foundry.name.charAt(0)}
@@ -165,15 +241,71 @@ export default function Home() {
                   <h3 className="text-xl font-bold">{foundry.name}</h3>
                 </div>
                 <p className="text-muted-foreground mb-5">{foundry.description}</p>
-                <a 
-                  href={`/listen/${foundry.id}`} 
-                  className="inline-flex items-center px-4 py-2 rounded-full bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
-                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                  </svg>
-                  Listen
-                </a>
+                
+                {/* Display reactions if any */}
+                {foundry.reactions && Object.keys(foundry.reactions).length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {Object.entries(foundry.reactions).map(([emoji, count]) => (
+                      <div 
+                        key={emoji} 
+                        className="flex items-center bg-black/5 dark:bg-white/5 px-2 py-1 rounded-full text-xs"
+                        title={foundryReactionTypes.find(r => r.emoji === emoji)?.description || ''}
+                      >
+                        <span className="mr-1">{emoji}</span>
+                        <span>{count}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                <div className="flex items-center space-x-2">
+                  <a 
+                    href={`/listen/${foundry.id}`} 
+                    className="inline-flex items-center px-4 py-2 rounded-full bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+                      <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                    </svg>
+                    Listen
+                  </a>
+                  
+                  {/* Add reaction button */}
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowReactionPopup(showReactionPopup === foundry.id ? null : foundry.id);
+                    }}
+                    className="p-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                    aria-label="Add reaction"
+                    title="Add reaction"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+                      <line x1="9" y1="9" x2="9.01" y2="9"></line>
+                      <line x1="15" y1="9" x2="15.01" y2="9"></line>
+                    </svg>
+                  </button>
+                  
+                  {/* Reaction popup */}
+                  {showReactionPopup === foundry.id && (
+                    <div className="absolute z-20 bg-background shadow-lg rounded-lg p-2 border border-border mt-2 animate-fadeIn reaction-popup">
+                      <div className="text-xs font-medium mb-2 text-muted-foreground">Add reaction:</div>
+                      <div className="grid grid-cols-5 gap-2">
+                        {foundryReactionTypes.map(({ emoji, description }) => (
+                          <button
+                            key={emoji}
+                            onClick={() => addFoundryReaction(foundry.id, emoji)}
+                            className="w-8 h-8 flex items-center justify-center hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-colors"
+                            title={description}
+                          >
+                            {emoji}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             ))}
           </div>
