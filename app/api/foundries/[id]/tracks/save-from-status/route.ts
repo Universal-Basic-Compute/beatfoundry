@@ -60,7 +60,7 @@ export async function POST(request: NextRequest, { params }: any) {
             try {
               console.log(`[SAVE-STATUS] Downloading track: ${updatedTrack.name}`);
           
-              const downloadResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'https://beatsfoundry.vercel.app'}/api/foundries/${foundryId}/tracks/download`, {
+              const downloadResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'https://beatfoundry.vercel.app'}/api/foundries/${foundryId}/tracks/download`, {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',

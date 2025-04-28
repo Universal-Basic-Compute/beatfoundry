@@ -147,7 +147,7 @@ export async function POST(request, { params }) {
       // Use the production URL for the callback in production
       let callbackUrl;
       if (process.env.NODE_ENV === 'production') {
-        callbackUrl = `https://beatsfoundry.vercel.app/api/foundries/${foundryId}/tracks/callback`;
+        callbackUrl = `https://beatfoundry.vercel.app/api/foundries/${foundryId}/tracks/callback`;
       } else {
         // For development, use the server's URL
         const host = request.headers.get('host');

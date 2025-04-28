@@ -103,7 +103,7 @@ export async function POST(request, { params }) {
               try {
                 console.log(`[CALLBACK] Downloading track: ${trackToDownload.name}`);
                 
-                const downloadResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'https://beatsfoundry.vercel.app'}/api/foundries/${foundryId}/tracks/download`, {
+                const downloadResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'https://beatfoundry.vercel.app'}/api/foundries/${foundryId}/tracks/download`, {
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json',

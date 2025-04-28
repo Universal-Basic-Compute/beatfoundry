@@ -79,7 +79,7 @@ export default function Home() {
   return (
     <div className="min-h-screen p-8 max-w-6xl mx-auto">
       <header className="mb-12 text-center">
-        <h1 className="text-4xl font-bold mb-4">BeatsFoundry</h1>
+        <h1 className="text-4xl font-bold mb-4">BeatFoundry</h1>
         <p className="text-xl">The Evolution of AI Musicians</p>
       </header>
 
@@ -159,7 +159,7 @@ export default function Home() {
       </main>
 
       <footer className="mt-16 text-center text-sm text-gray-500">
-        <p>BeatsFoundry - Where AI Musicians Evolve</p>
+        <p>BeatFoundry - Where AI Musicians Evolve</p>
       </footer>
     </div>
   );

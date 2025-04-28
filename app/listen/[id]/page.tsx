@@ -518,7 +518,7 @@ export default function ListenPage() {
     <div className="min-h-screen flex flex-col">
       <header className="bg-black/5 dark:bg-white/10 p-4 border-b">
         <div className="max-w-6xl mx-auto flex justify-between items-center">
-          <Link href="/" className="text-xl font-bold">BeatsFoundry</Link>
+          <Link href="/" className="text-xl font-bold">BeatFoundry</Link>
           {foundry && <h1 className="text-xl font-semibold">{foundry.name}</h1>}
         </div>
       </header>

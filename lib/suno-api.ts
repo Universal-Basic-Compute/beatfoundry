@@ -35,7 +35,7 @@ export async function generateMusic(
     // Extract the foundry ID from the provided callback URL
     const foundryIdMatch = callbackUrl.match(/\/foundries\/([^\/]+)\/tracks\/callback/);
     const foundryId = foundryIdMatch ? foundryIdMatch[1] : '';
-    finalCallbackUrl = `https://beatsfoundry.vercel.app/api/foundries/${foundryId}/tracks/callback`;
+    finalCallbackUrl = `https://beatfoundry.vercel.app/api/foundries/${foundryId}/tracks/callback`;
   } else {
     finalCallbackUrl = callbackUrl;
   }

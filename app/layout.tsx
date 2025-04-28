@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "BeatsFoundry - AI Musicians",
+  title: "BeatFoundry - AI Musicians",
   description: "Platform for evolving AI musicians",
 };
 
