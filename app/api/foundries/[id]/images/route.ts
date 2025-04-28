@@ -32,57 +32,50 @@ export async function POST(request: NextRequest, { params }: any) {
     const imageApiUrl = `${process.env.KINOS_API_BASE_URL || 'https://api.kinos-engine.ai/v2'}/blueprints/${process.env.KINOS_BLUEPRINT_ID || 'beatfoundry'}/kins/${foundryId}/images`;
     console.log(`[IMAGES] Full image API URL: ${imageApiUrl}`);
     
-    try {
-      const imageResponse = await fetch(imageApiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.KINOS_API_KEY}`,
-        },
-        body: JSON.stringify({
-          prompt: prompt,
-          aspect_ratio: "ASPECT_1_1",
-          model: "V_2A",
-          magic_prompt_option: "AUTO"
-        }),
-      });
-      
-      console.log(`[IMAGES] Image API response status: ${imageResponse.status}`);
-      
-      // Log response headers
-      const headers = {};
-      imageResponse.headers.forEach((value, key) => {
-        headers[key] = value;
-      });
-      console.log(`[IMAGES] Response headers:`, headers);
-      
-      if (!imageResponse.ok) {
-        const errorText = await imageResponse.text();
-        console.error(`[IMAGES] Error response from Ideogram API: ${imageResponse.status}`);
-        console.error(`[IMAGES] Error details: ${errorText}`);
-        return NextResponse.json(
-          { error: `Failed to generate cover image: ${imageResponse.status} - ${errorText}` },
-          { status: 500 }
-        );
-      }
-      
-      const imageData = await imageResponse.json();
-      console.log(`[IMAGES] Image generation response:`, JSON.stringify(imageData, null, 2));
-      
-      // Extract the image URL
-      const imageUrl = imageData.data?.url;
-      
-      if (!imageUrl) {
-        console.error(`[IMAGES] No image URL found in response:`, JSON.stringify(imageData, null, 2));
-        return NextResponse.json(
-          { error: 'No image URL found in response' },
-          { status: 500 }
-        );
-      }
-    } catch (error) {
-      console.error(`[IMAGES] Error making request to image API:`, error);
+    // Make the API call to generate the image
+    const imageResponse = await fetch(imageApiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.KINOS_API_KEY}`,
+      },
+      body: JSON.stringify({
+        prompt: prompt,
+        aspect_ratio: "ASPECT_1_1",
+        model: "V_2A",
+        magic_prompt_option: "AUTO"
+      }),
+    });
+    
+    console.log(`[IMAGES] Image API response status: ${imageResponse.status}`);
+    
+    // Log response headers
+    const headers = {};
+    imageResponse.headers.forEach((value, key) => {
+      headers[key] = value;
+    });
+    console.log(`[IMAGES] Response headers:`, headers);
+    
+    if (!imageResponse.ok) {
+      const errorText = await imageResponse.text();
+      console.error(`[IMAGES] Error response from Ideogram API: ${imageResponse.status}`);
+      console.error(`[IMAGES] Error details: ${errorText}`);
       return NextResponse.json(
-        { error: `Failed to make request to image API: ${error.message}` },
+        { error: `Failed to generate cover image: ${imageResponse.status} - ${errorText}` },
+        { status: 500 }
+      );
+    }
+    
+    const imageData = await imageResponse.json();
+    console.log(`[IMAGES] Image generation response:`, JSON.stringify(imageData, null, 2));
+    
+    // Extract the image URL
+    const imageUrl = imageData.data?.url;
+    
+    if (!imageUrl) {
+      console.error(`[IMAGES] No image URL found in response:`, JSON.stringify(imageData, null, 2));
+      return NextResponse.json(
+        { error: 'No image URL found in response' },
         { status: 500 }
       );
     }
