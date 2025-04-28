@@ -103,7 +103,13 @@ export async function POST(request, { params }) {
               try {
                 console.log(`[CALLBACK] Downloading track: ${trackToDownload.name}`);
                 
-                const downloadResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'https://beatfoundry.vercel.app'}/api/foundries/${foundryId}/tracks/download`, {
+                // Determine the base URL for the API call
+                const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 
+                              (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://beatfoundry.vercel.app');
+
+                console.log(`[CALLBACK] Using base URL for download: ${baseUrl}`);
+
+                const downloadResponse = await fetch(`${baseUrl}/api/foundries/${foundryId}/tracks/download`, {
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json',
