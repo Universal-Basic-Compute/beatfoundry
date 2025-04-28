@@ -31,6 +31,13 @@ export default function Home() {
   const [formError, setFormError] = useState<string | null>(null);
   const [formSuccess, setFormSuccess] = useState<string | null>(null);
   
+  // Function to calculate the total reactions for a foundry
+  const getTotalReactions = (foundry: Foundry): number => {
+    if (!foundry.reactions) return 0;
+    
+    return Object.values(foundry.reactions).reduce((sum, count) => sum + count, 0);
+  };
+  
   // Define the reaction types and their descriptions
   const foundryReactionTypes = [
     { emoji: '🏆', description: 'Hit Maker (consistently creates popular tracks)' },
@@ -232,7 +239,9 @@ export default function Home() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {foundries.map((foundry) => (
+            {[...foundries]
+              .sort((a, b) => getTotalReactions(b) - getTotalReactions(a))
+              .map((foundry) => (
               <div key={foundry.id} className="border border-border rounded-xl p-6 hover:shadow-md transition-shadow bg-card relative">
                 <div className="flex items-center mb-3">
                   <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center mr-3 font-semibold">
@@ -255,6 +264,13 @@ export default function Home() {
                         <span>{count}</span>
                       </div>
                     ))}
+                  </div>
+                )}
+                
+                {/* Add total reactions count badge */}
+                {foundry.reactions && Object.keys(foundry.reactions).length > 0 && (
+                  <div className="absolute top-3 right-3 bg-primary/10 text-primary text-xs px-2 py-1 rounded-full">
+                    {getTotalReactions(foundry)} reactions
                   </div>
                 )}
                 
