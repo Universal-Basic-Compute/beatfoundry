@@ -114,10 +114,20 @@ export default function ListenPage() {
           });
         }
         
+        // Store the current track ID before updating the tracks list
+        const currentTrackId = currentTrack?.id;
+        
         setTracks(data);
         
-        // Set the first track as current if available
-        if (data.length > 0 && !currentTrack) {
+        // If we had a current track, find and restore it in the new tracks list
+        if (currentTrackId) {
+          const updatedCurrentTrack = data.find(track => track.id === currentTrackId);
+          if (updatedCurrentTrack) {
+            // Update the current track with the latest data, but don't reset playback
+            setCurrentTrack(updatedCurrentTrack);
+          }
+        } else if (data.length > 0 && !currentTrack) {
+          // Only set the first track as current if there's no current track
           setCurrentTrack(data[0]);
         }
       } catch (err) {
@@ -141,7 +151,7 @@ export default function ListenPage() {
         clearInterval(pollingInterval);
       }
     };
-  }, [foundryId, currentTrack, pollingInterval]);
+  }, [foundryId, pollingInterval]); // Remove currentTrack from the dependency array
   
   // Handle audio playback
   useEffect(() => {
