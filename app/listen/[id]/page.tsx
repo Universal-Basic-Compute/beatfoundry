@@ -136,9 +136,12 @@ export default function ListenPage() {
           });
         }
         
-        // Store the current track ID before updating the tracks list
+        // Store the current track ID and playback state before updating
         const currentTrackId = currentTrack?.id;
+        const wasPlaying = isPlaying;
+        const currentPlaybackTime = audioRef.current?.currentTime || 0;
         
+        // Update tracks list without changing the current track
         setTracks(data);
         
         // If we had a current track, find and restore it in the new tracks list
@@ -146,7 +149,27 @@ export default function ListenPage() {
           const updatedCurrentTrack = data.find((track: Track) => track.id === currentTrackId);
           if (updatedCurrentTrack) {
             // Update the current track with the latest data, but don't reset playback
-            setCurrentTrack(updatedCurrentTrack);
+            setCurrentTrack(prev => {
+              // Only update if the URL has changed
+              if (prev?.url !== updatedCurrentTrack.url) {
+                return updatedCurrentTrack;
+              }
+              return prev; // Keep the same object reference if URL hasn't changed
+            });
+            
+            // If the audio element exists and the URL changed, we need to restore playback state
+            if (audioRef.current && currentTrack?.url !== updatedCurrentTrack.url) {
+              // Set the new source
+              audioRef.current.src = updatedCurrentTrack.url;
+              // Restore playback position
+              audioRef.current.currentTime = currentPlaybackTime;
+              // Restore play/pause state
+              if (wasPlaying) {
+                audioRef.current.play().catch(err => {
+                  console.error('Error resuming playback after track update:', err);
+                });
+              }
+            }
           }
         } else if (data.length > 0 && !currentTrack) {
           // Only set the first track as current if there's no current track
@@ -173,7 +196,7 @@ export default function ListenPage() {
         clearInterval(pollingInterval);
       }
     };
-  }, [foundryId, pollingInterval]); // Remove currentTrack from the dependency array
+  }, [foundryId, pollingInterval]); // Keep currentTrack and isPlaying out of dependencies
   
   // Handle audio playback
   useEffect(() => {
