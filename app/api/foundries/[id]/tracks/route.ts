@@ -139,23 +139,6 @@ export async function POST(request, { params }) {
     // Generate music with SUNO API
     let musicResponse;
     try {
-      // Store a placeholder track in Airtable immediately
-      try {
-        console.log(`[TRACKS] Creating placeholder track in Airtable: "${musicParams.title}"`);
-        const placeholderTrack = await createTrack(
-          foundryId,
-          musicParams.title,
-          musicParams.prompt,
-          musicParams.lyrics,
-          "pending", // This will be updated when the callback comes
-          musicResponse?.data?.task_id || musicResponse?.data?.taskId // Save the taskId
-        );
-        console.log(`[TRACKS] Created placeholder track in Airtable:`, placeholderTrack);
-      } catch (airtableError) {
-        console.error(`[TRACKS] Error creating placeholder track in Airtable:`, airtableError);
-        // Continue anyway, don't fail the request
-      }
-      
       // Use the production URL for the callback in production
       let callbackUrl;
       if (process.env.NODE_ENV === 'production') {
@@ -179,6 +162,28 @@ export async function POST(request, { params }) {
       console.log(`[TRACKS] SUNO API response:`, musicResponse);
       console.log(`[TRACKS] Task ID from SUNO API:`, musicResponse?.data?.task_id);
       console.log(`[TRACKS] Task ID from SUNO API:`, musicResponse?.data?.task_id);
+      
+      // Now that we have the taskId, create the placeholder track
+      if (musicResponse?.data?.task_id || musicResponse?.data?.taskId) {
+        try {
+          const taskId = musicResponse?.data?.task_id || musicResponse?.data?.taskId;
+          console.log(`[TRACKS] Creating placeholder track in Airtable with TaskId: "${taskId}"`);
+          const placeholderTrack = await createTrack(
+            foundryId,
+            musicParams.title,
+            musicParams.prompt,
+            musicParams.lyrics,
+            "pending", // This will be updated when the callback comes
+            taskId // Save the taskId
+          );
+          console.log(`[TRACKS] Created placeholder track in Airtable:`, placeholderTrack);
+        } catch (airtableError) {
+          console.error(`[TRACKS] Error creating placeholder track in Airtable:`, airtableError);
+          // Continue anyway, don't fail the request
+        }
+      } else {
+        console.warn(`[TRACKS] No taskId found in SUNO API response, skipping placeholder track creation`);
+      }
     } catch (musicError) {
       console.error(`[TRACKS] Error generating music with SUNO API:`, musicError);
       // Continue without music generation in case of error
