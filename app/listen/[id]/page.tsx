@@ -86,13 +86,40 @@ export default function ListenPage() {
   useEffect(() => {
     const fetchFoundry = async () => {
       try {
+        setLoading(true);
         const response = await fetch(`/api/foundries/${foundryId}`);
-        if (!response.ok) throw new Error('Failed to fetch foundry details');
-        const data = await response.json();
-        setFoundry(data);
+        
+        if (!response.ok) {
+          console.error(`Error fetching foundry: ${response.status}`);
+          const errorText = await response.text();
+          console.error(`Error details: ${errorText}`);
+          
+          // Create a fallback foundry object if we can't fetch the real one
+          setFoundry({
+            id: foundryId,
+            name: "AI Musician",
+            description: "Your AI music companion"
+          });
+          
+          setError('Could not load foundry details, using default settings');
+        } else {
+          const data = await response.json();
+          setFoundry(data);
+          setError(null);
+        }
       } catch (err) {
         console.error('Error fetching foundry:', err);
-        setError('Could not load foundry details');
+        
+        // Create a fallback foundry object
+        setFoundry({
+          id: foundryId,
+          name: "AI Musician",
+          description: "Your AI music companion"
+        });
+        
+        setError('Could not load foundry details, using default settings');
+      } finally {
+        setLoading(false);
       }
     };
     
