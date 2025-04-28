@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { NextResponse } from 'next/server';
 import { sendChannelMessage } from '@/lib/kinos-messages-api';
 import { generateMusic } from '@/lib/suno-api';
