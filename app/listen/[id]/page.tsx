@@ -546,7 +546,24 @@ export default function ListenPage() {
         {/* Right side - Chat */}
         <div className="w-full md:w-1/2 p-6 flex flex-col h-[calc(100vh-80px)]">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-semibold">Chat with {foundry?.name || 'AI Musician'}</h2>
+            <div className="flex items-center">
+              <h2 className="text-2xl font-semibold">Chat with {foundry?.name || 'AI Musician'}</h2>
+              
+              {/* Information icon with tooltip */}
+              <div className="relative ml-2 group">
+                <button 
+                  className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 flex items-center justify-center text-xs font-bold"
+                  aria-label="Information"
+                >
+                  i
+                </button>
+                <div className="absolute left-0 bottom-full mb-2 w-64 p-2 bg-white dark:bg-gray-800 rounded shadow-lg text-xs z-10 hidden group-hover:block">
+                  <p className="mb-1"><strong>How to use:</strong></p>
+                  <p className="mb-1">1. Use <strong>Send</strong> to chat with the AI and guide its artistic direction.</p>
+                  <p>2. Use <strong>Create Track</strong> to generate music based on your prompt.</p>
+                </div>
+              </div>
+            </div>
             
             {/* Options menu */}
             <div className="relative">
