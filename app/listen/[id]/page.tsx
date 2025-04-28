@@ -1626,7 +1626,7 @@ export default function ListenPage() {
                            thoughts[thoughts.length - 1].step === 'dream' ? 'Dream' : 
                            thoughts[thoughts.length - 1].step === 'daydreaming' ? 'Daydreaming' : 
                            thoughts[thoughts.length - 1].step === 'initiative' ? 'Initiative' : 
-                           thoughts[thoughts.length - 1].step.charAt(0).toUpperCase() + thoughts[thoughts.length - 1].step.slice(1)}
+                           ((step: string) => step.charAt(0).toUpperCase() + step.slice(1))(thoughts[thoughts.length - 1].step)}
                         </div>
                         {thoughts[thoughts.length - 1].step === 'keywords' ? (
                           <div>
