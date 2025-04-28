@@ -102,6 +102,21 @@ export async function POST(
     // Generate music with SUNO API
     let musicResponse;
     try {
+      // Store a placeholder track in Airtable immediately
+      try {
+        await createTrack(
+          foundryId,
+          musicParams.title,
+          musicParams.prompt,
+          musicParams.lyrics,
+          "pending" // This will be updated when the callback comes
+        );
+        console.log(`Created placeholder track "${musicParams.title}" in Airtable`);
+      } catch (airtableError) {
+        console.error('Error creating placeholder track in Airtable:', airtableError);
+        // Continue anyway, don't fail the request
+      }
+      
       // Use the server's URL for the callback
       const host = request.headers.get('host');
       const protocol = host?.includes('localhost') ? 'http' : 'https';
