@@ -46,20 +46,23 @@ export async function POST(request: Request) {
       );
     }
     
+    console.log('Starting foundry creation process');
+    
     // Create the kin in Kinos Engine API
+    console.log('Attempting to create kin in Kinos Engine API');
     let kinResponse;
     try {
       kinResponse = await createKin(body.name);
       console.log('Kin created successfully:', kinResponse);
     } catch (kinError: any) {
+      console.error('Error creating kin in Kinos Engine:', kinError);
       // If the error is a 409 (already exists), we can still proceed with creating in Airtable
       if (kinError.message && kinError.message.includes('already exists')) {
         console.warn('Kin already exists in Kinos Engine, but not in Airtable. Proceeding with Airtable creation.');
       } else {
         // For other errors, we should stop and return the error
-        console.error('Error creating kin in Kinos Engine:', kinError);
         return NextResponse.json(
-          { error: 'Failed to create kin in Kinos Engine' },
+          { error: 'Failed to create kin in Kinos Engine: ' + kinError.message },
           { status: 500 }
         );
       }
