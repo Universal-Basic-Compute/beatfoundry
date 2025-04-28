@@ -3,9 +3,9 @@ import { getMessages, sendMessage } from '@/lib/kinos-messages-api';
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
-  const foundryId = params.id;
+  const foundryId = context.params.id;
   const url = new URL(request.url);
   
   const since = url.searchParams.get('since') || undefined;
@@ -54,9 +54,9 @@ export async function GET(
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
-  const foundryId = params.id;
+  const foundryId = context.params.id;
   const body = await request.json();
   
   if (!body.content) {

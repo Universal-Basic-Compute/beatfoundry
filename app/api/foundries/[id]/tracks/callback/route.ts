@@ -1,12 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { createTrack } from '@/lib/airtable';
 
 // This endpoint will receive callbacks from SUNO API when music generation is complete
 export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
+  request: Request,
+  context: { params: { id: string } }
 ) {
-  const foundryId = params.id;
+  const foundryId = context.params.id;
   console.log(`[CALLBACK] Received SUNO API callback for foundry ID: ${foundryId}`);
   
   try {
