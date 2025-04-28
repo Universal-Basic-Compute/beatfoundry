@@ -406,41 +406,40 @@ export default function ListenPage() {
     }
     
     console.log('[UI] Compiling thinking results from', thoughts.length, 'thoughts');
-    
-    const keywordsThought = thoughts.find(t => t.step === 'keywords');
-    const dreamThought = thoughts.find(t => t.step === 'dream');
-    const daydreamingThought = thoughts.find(t => t.step === 'daydreaming');
-    const initiativeThought = thoughts.find(t => t.step === 'initiative');
+    console.log('[UI] Available thoughts:', thoughts.map(t => t.step).join(', '));
     
     // Create a comprehensive prompt from the thinking results
     let trackPrompt = "Create a track based on these thoughts:\n\n";
     let hasContent = false;
     
-    if (keywordsThought && keywordsThought.content) {
-      console.log('[UI] Adding keywords to prompt');
-      const keywords = keywordsThought.content.relevant_keywords || [];
-      const emotions = keywordsThought.content.emotions || [];
-      trackPrompt += `Keywords: ${keywords.join(', ')}\n`;
-      trackPrompt += `Emotions: ${emotions.join(', ')}\n\n`;
-      hasContent = true;
-    }
-    
-    if (dreamThought && dreamThought.content) {
-      console.log('[UI] Adding dream to prompt');
-      trackPrompt += `Dream: ${dreamThought.content}\n\n`;
-      hasContent = true;
-    }
-    
-    if (daydreamingThought && daydreamingThought.content) {
-      console.log('[UI] Adding daydreaming to prompt');
-      trackPrompt += `Daydreaming: ${daydreamingThought.content}\n\n`;
-      hasContent = true;
-    }
-    
-    if (initiativeThought && initiativeThought.content) {
-      console.log('[UI] Adding initiative to prompt');
-      trackPrompt += `Initiative: ${initiativeThought.content}\n\n`;
-      hasContent = true;
+    // Include any available thoughts, don't require specific ones
+    for (const thought of thoughts) {
+      if (thought.step === 'keywords' && thought.content) {
+        console.log('[UI] Adding keywords to prompt');
+        const keywords = thought.content.relevant_keywords || [];
+        const emotions = thought.content.emotions || [];
+        if (keywords.length > 0) {
+          trackPrompt += `Keywords: ${keywords.join(', ')}\n`;
+          hasContent = true;
+        }
+        if (emotions.length > 0) {
+          trackPrompt += `Emotions: ${emotions.join(', ')}\n`;
+          hasContent = true;
+        }
+        trackPrompt += '\n';
+      } else if (thought.step === 'dream' && thought.content) {
+        console.log('[UI] Adding dream to prompt');
+        trackPrompt += `Dream: ${thought.content}\n\n`;
+        hasContent = true;
+      } else if (thought.step === 'daydreaming' && thought.content) {
+        console.log('[UI] Adding daydreaming to prompt');
+        trackPrompt += `Daydreaming: ${thought.content}\n\n`;
+        hasContent = true;
+      } else if (thought.step === 'initiative' && thought.content) {
+        console.log('[UI] Adding initiative to prompt');
+        trackPrompt += `Initiative: ${thought.content}\n\n`;
+        hasContent = true;
+      }
     }
     
     if (!hasContent) {
