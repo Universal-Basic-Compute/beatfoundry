@@ -79,8 +79,15 @@ export default function Home() {
   return (
     <div className="min-h-screen p-8 max-w-6xl mx-auto">
       <header className="mb-12 text-center">
-        <h1 className="text-4xl font-bold mb-4">BeatFoundry</h1>
-        <p className="text-xl">The Evolution of AI Musicians</p>
+        <div className="flex items-center justify-center mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary mr-3">
+            <path d="M9 18V5l12-2v13"></path>
+            <circle cx="6" cy="18" r="3"></circle>
+            <circle cx="18" cy="16" r="3"></circle>
+          </svg>
+          <h1 className="text-4xl font-bold">BeatFoundry</h1>
+        </div>
+        <p className="text-xl text-muted-foreground">The Evolution of AI Musicians</p>
       </header>
 
       <main>
@@ -95,31 +102,31 @@ export default function Home() {
         </div>
 
         {showForm && (
-          <div className="bg-card text-card-foreground p-6 rounded-lg mb-8">
-            <h3 className="text-xl font-semibold mb-4">Create New Foundry</h3>
-            {formError && <div className="text-red-500 mb-4">{formError}</div>}
-            {formSuccess && <div className="text-green-500 mb-4">{formSuccess}</div>}
+          <div className="bg-card text-card-foreground p-8 rounded-xl mb-8 shadow-sm border border-border">
+            <h3 className="text-xl font-bold mb-6">Create New Foundry</h3>
+            {formError && <div className="text-destructive mb-4 p-3 bg-destructive/10 rounded-lg">{formError}</div>}
+            {formSuccess && <div className="text-success mb-4 p-3 bg-success/10 rounded-lg">{formSuccess}</div>}
             
             <form onSubmit={handleSubmit}>
-              <div className="mb-4">
-                <label htmlFor="name" className="block mb-2">Name</label>
+              <div className="mb-5">
+                <label htmlFor="name" className="block mb-2 font-medium">Name</label>
                 <input
                   type="text"
                   id="name"
                   value={newFoundry.name}
                   onChange={(e) => setNewFoundry({...newFoundry, name: e.target.value})}
-                  className="w-full p-2 border border-input rounded bg-background text-foreground"
+                  className="w-full p-3 border border-input rounded-lg bg-background text-foreground focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all"
                   placeholder="Enter foundry name"
                 />
               </div>
               
-              <div className="mb-4">
-                <label htmlFor="description" className="block mb-2">Description</label>
+              <div className="mb-6">
+                <label htmlFor="description" className="block mb-2 font-medium">Description</label>
                 <textarea
                   id="description"
                   value={newFoundry.description}
                   onChange={(e) => setNewFoundry({...newFoundry, description: e.target.value})}
-                  className="w-full p-2 border border-input rounded bg-background text-foreground"
+                  className="w-full p-3 border border-input rounded-lg bg-background text-foreground focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all"
                   rows={3}
                   placeholder="Describe this AI musician's style and focus"
                 />
@@ -127,8 +134,12 @@ export default function Home() {
               
               <button 
                 type="submit"
-                className="rounded-full bg-primary text-primary-foreground px-4 py-2 font-medium hover:opacity-90 transition-opacity"
+                className="rounded-full bg-primary text-primary-foreground px-6 py-3 font-medium hover:bg-primary/90 transition-colors shadow-sm flex items-center"
               >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+                  <path d="M12 5v14"></path>
+                  <path d="M5 12h14"></path>
+                </svg>
                 Create Foundry
               </button>
             </form>
@@ -146,10 +157,21 @@ export default function Home() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {foundries.map((foundry) => (
-              <div key={foundry.id} className="border rounded-lg p-6 hover:shadow-md transition-shadow">
-                <h3 className="text-xl font-semibold mb-2">{foundry.name}</h3>
-                <p className="text-gray-600 dark:text-gray-300 mb-4">{foundry.description}</p>
-                <a href={`/listen/${foundry.id}`} className="text-sm underline hover:no-underline">
+              <div key={foundry.id} className="border border-border rounded-xl p-6 hover:shadow-md transition-shadow bg-card">
+                <div className="flex items-center mb-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center mr-3 font-semibold">
+                    {foundry.name.charAt(0)}
+                  </div>
+                  <h3 className="text-xl font-bold">{foundry.name}</h3>
+                </div>
+                <p className="text-muted-foreground mb-5">{foundry.description}</p>
+                <a 
+                  href={`/listen/${foundry.id}`} 
+                  className="inline-flex items-center px-4 py-2 rounded-full bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                  </svg>
                   Listen
                 </a>
               </div>

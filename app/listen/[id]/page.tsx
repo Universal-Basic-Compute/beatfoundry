@@ -1002,28 +1002,47 @@ export default function ListenPage() {
   
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="bg-muted/50 dark:bg-muted/10 p-4 border-b border-border">
+      <header className="bg-background border-b border-border p-4 sticky top-0 z-10">
         <div className="max-w-6xl mx-auto flex justify-between items-center">
-          <Link href="/" className="text-xl font-bold text-foreground">BeatFoundry</Link>
-          {foundry && <h1 className="text-xl font-semibold text-foreground">{foundry.name}</h1>}
+          <Link href="/" className="text-xl font-bold text-foreground flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary mr-2">
+              <path d="M9 18V5l12-2v13"></path>
+              <circle cx="6" cy="18" r="3"></circle>
+              <circle cx="18" cy="16" r="3"></circle>
+            </svg>
+            BeatFoundry
+          </Link>
+          {foundry && (
+            <div className="flex items-center">
+              <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center mr-2">
+                {foundry.name.charAt(0)}
+              </div>
+              <h1 className="text-xl font-semibold text-foreground">{foundry.name}</h1>
+            </div>
+          )}
         </div>
       </header>
       
       <main className="flex-1 flex flex-col md:flex-row max-w-6xl mx-auto w-full">
         {/* Left side - Music Player */}
         <div className="w-full md:w-1/2 p-6 border-r">
-          <div className="bg-card text-card-foreground rounded-lg p-6 h-full flex flex-col">
-            <h2 className="text-2xl font-semibold mb-4">Music Player</h2>
+          <div className="bg-gradient-to-br from-card to-card/80 text-card-foreground rounded-xl p-8 h-full flex flex-col shadow-md">
+            <h2 className="text-2xl font-bold mb-6 text-foreground">Music Player</h2>
             
             {loadingTracks ? (
               <div className="flex-1 flex items-center justify-center">
-                <p>Loading tracks...</p>
+                <div className="flex flex-col items-center">
+                  <div className="relative w-12 h-12">
+                    <div className="absolute top-0 left-0 w-full h-full border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
+                  </div>
+                  <p className="mt-4 text-muted-foreground">Loading tracks...</p>
+                </div>
               </div>
             ) : tracks.length === 0 && pendingGenerations.length === 0 ? (
               <div className="flex-1 flex items-center justify-center text-center">
                 <div>
-                  <div className="w-48 h-48 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto mb-6 flex items-center justify-center">
-                    <span className="text-4xl">🎵</span>
+                  <div className="w-48 h-48 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto mb-6 flex items-center justify-center shadow-lg">
+                    <span className="text-5xl">🎵</span>
                   </div>
                   <p className="text-lg font-medium">No tracks yet</p>
                   <p className="text-gray-600 dark:text-gray-400 mt-2">
@@ -1123,87 +1142,125 @@ export default function ListenPage() {
                   )}
                   
                   <div className="text-center mb-6">
-                    <div className="w-48 h-48 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto mb-6 flex items-center justify-center">
-                      <span className="text-4xl">🎵</span>
+                    <div className="relative w-48 h-48 mx-auto mb-8">
+                      <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-accent/20 rounded-full"></div>
+                      <div className="w-full h-full bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center shadow-lg">
+                        <span className="text-5xl">🎵</span>
+                      </div>
+                      {/* Add a spinning animation when playing */}
+                      {isPlaying && (
+                        <div className="absolute inset-0 border-4 border-primary/30 border-t-primary rounded-full animate-spin" style={{ animationDuration: '4s' }}></div>
+                      )}
                     </div>
-                    <p className="text-lg font-medium">Now Playing</p>
-                    <p className="text-gray-600 dark:text-gray-400">
-                      {currentTrack ? currentTrack.name : 'Select a track'}
-                    </p>
+                    
+                    {/* Improved Now Playing section */}
+                    <div className="text-center mb-8">
+                      <p className="text-sm uppercase tracking-wider text-muted-foreground mb-1">Now Playing</p>
+                      <p className="text-xl font-bold text-foreground mb-1">{currentTrack?.name || 'Select a track'}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {currentTrack ? new Date(currentTrack.createdAt).toLocaleDateString() : ''}
+                      </p>
+                    </div>
+                    
                     <div className="mt-6">
-                      {/* Progress bar */}
-                      <div className="flex items-center space-x-2 mb-3">
-                        <span className="text-xs">{formatTime(currentTime)}</span>
-                        <input
-                          type="range"
-                          min="0"
-                          max={duration || 0}
-                          value={currentTime}
-                          onChange={handleSeek}
-                          className="flex-1 h-2 bg-muted rounded-full appearance-none cursor-pointer"
-                          style={{
-                            background: `linear-gradient(to right, var(--primary) ${(currentTime / (duration || 1)) * 100}%, var(--muted) ${(currentTime / (duration || 1)) * 100}%)`
-                          }}
-                          disabled={!currentTrack}
-                        />
-                        <span className="text-xs">{formatTime(duration)}</span>
+                      {/* Improved progress bar */}
+                      <div className="flex items-center space-x-3 mb-6">
+                        <span className="text-xs font-medium">{formatTime(currentTime)}</span>
+                        <div className="relative flex-1 h-2 bg-muted/50 rounded-full overflow-hidden">
+                          <div 
+                            className="absolute top-0 left-0 h-full bg-gradient-to-r from-primary to-accent rounded-full"
+                            style={{ width: `${(currentTime / (duration || 1)) * 100}%` }}
+                          ></div>
+                        </div>
+                        <span className="text-xs font-medium">{formatTime(duration)}</span>
                       </div>
                       
-                      {/* Playback controls */}
-                      <div className="flex justify-center space-x-4">
+                      {/* Improved playback controls */}
+                      <div className="flex justify-center space-x-6 mb-8">
                         <button 
                           onClick={playPreviousTrack}
-                          className="p-3 rounded-full bg-primary text-primary-foreground"
+                          className="p-4 rounded-full bg-primary/10 hover:bg-primary/20 text-primary transition-colors"
                           disabled={!currentTrack}
                         >
-                          <span>⏮️</span>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polygon points="19 20 9 12 19 4 19 20"></polygon>
+                            <line x1="5" y1="19" x2="5" y2="5"></line>
+                          </svg>
                         </button>
                         <button 
                           onClick={togglePlayPause}
-                          className="p-3 rounded-full bg-primary text-primary-foreground"
+                          className="p-5 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground transition-colors shadow-md"
                           disabled={!currentTrack}
                         >
-                          <span>{isPlaying ? '⏸️' : '▶️'}</span>
+                          {isPlaying ? (
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <rect x="6" y="4" width="4" height="16"></rect>
+                              <rect x="14" y="4" width="4" height="16"></rect>
+                            </svg>
+                          ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                            </svg>
+                          )}
                         </button>
                         <button 
                           onClick={playNextTrack}
-                          className="p-3 rounded-full bg-primary text-primary-foreground"
+                          className="p-4 rounded-full bg-primary/10 hover:bg-primary/20 text-primary transition-colors"
                           disabled={!currentTrack}
                         >
-                          <span>⏭️</span>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polygon points="5 4 15 12 5 20 5 4"></polygon>
+                            <line x1="19" y1="5" x2="19" y2="19"></line>
+                          </svg>
                         </button>
                       </div>
                     </div>
                   </div>
                   
-                  <h3 className="font-semibold mb-2">Track List</h3>
-                  <div className="space-y-2">
+                  <h3 className="text-xl font-bold mb-4 flex items-center">
+                    Track List
+                    <span className="ml-2 text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
+                      {tracks.length}
+                    </span>
+                  </h3>
+                  
+                  <div className="space-y-3">
                     {tracks.map((track, index) => (
                       <div 
                         key={track.id || `track-${index}`}
-                        className={`p-3 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 ${
-                          currentTrack?.id === track.id ? 'bg-black/10 dark:bg-white/10' : ''
-                        } relative`}
+                        className={`p-4 rounded-xl transition-all ${
+                          currentTrack?.id === track.id 
+                            ? 'bg-primary/10 border-l-4 border-primary' 
+                            : 'hover:bg-black/5 dark:hover:bg-white/5 border-l-4 border-transparent'
+                        }`}
                       >
                         <div className="flex justify-between items-start">
                           <div 
                             className="flex-1 cursor-pointer" 
                             onClick={() => playTrack(track)}
                           >
-                            <div className="font-medium">{track.name}</div>
-                            <div className="text-sm text-gray-600 dark:text-gray-400 truncate">
+                            <div className="font-medium flex items-center">
+                              {currentTrack?.id === track.id && (
+                                <span className="mr-2 text-primary">
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                  </svg>
+                                </span>
+                              )}
+                              {track.name}
+                            </div>
+                            <div className="text-sm text-muted-foreground mt-1">
                               {new Date(track.createdAt).toLocaleDateString()}
                             </div>
                           </div>
                           
-                          {/* Add expand/collapse button and track options menu */}
-                          <div className="flex items-center space-x-2">
+                          <div className="flex items-center space-x-1">
                             <button 
                               onClick={(e) => {
                                 e.stopPropagation();
                                 toggleTrackExpansion(track.id);
                               }}
-                              className="p-1 rounded-full hover:bg-black/10 dark:hover:bg-white/10"
+                              className="p-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
                               aria-label={expandedTracks.has(track.id) ? "Collapse track details" : "Expand track details"}
                             >
                               <svg 
@@ -1216,7 +1273,7 @@ export default function ListenPage() {
                                 strokeWidth="2" 
                                 strokeLinecap="round" 
                                 strokeLinejoin="round"
-                                className={`transition-transform ${expandedTracks.has(track.id) ? 'rotate-180' : ''}`}
+                                className={`transition-transform duration-200 ${expandedTracks.has(track.id) ? 'rotate-180' : ''}`}
                               >
                                 <polyline points="6 9 12 15 18 9"></polyline>
                               </svg>
@@ -1229,7 +1286,7 @@ export default function ListenPage() {
                                   e.stopPropagation();
                                   setTrackMenuOpen(trackMenuOpen === track.id ? null : track.id);
                                 }}
-                                className="p-1 rounded-full hover:bg-black/10 dark:hover:bg-white/10"
+                                className="p-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
                                 aria-label="Track options"
                               >
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1260,23 +1317,23 @@ export default function ListenPage() {
                           </div>
                         </div>
                         
-                        {/* Expanded track details */}
+                        {/* Expanded track details with animation */}
                         {expandedTracks.has(track.id) && (
                           <div 
-                            className="mt-3 text-sm bg-black/5 dark:bg-white/5 p-3 rounded-lg"
-                            onClick={(e) => e.stopPropagation()} // Prevent clicking here from playing the track
+                            className="mt-3 text-sm bg-black/5 dark:bg-white/5 p-4 rounded-lg animate-fadeIn"
+                            onClick={(e) => e.stopPropagation()}
                           >
                             {track.prompt && (
-                              <div className="mb-3">
-                                <h4 className="font-medium mb-1">Prompt</h4>
-                                <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{track.prompt}</p>
+                              <div className="mb-4">
+                                <h4 className="font-semibold mb-2 text-primary">Prompt</h4>
+                                <p className="text-foreground whitespace-pre-wrap">{track.prompt}</p>
                               </div>
                             )}
                             
                             {track.lyrics && track.lyrics !== track.prompt && (
                               <div>
-                                <h4 className="font-medium mb-1">Lyrics</h4>
-                                <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{track.lyrics}</p>
+                                <h4 className="font-semibold mb-2 text-primary">Lyrics</h4>
+                                <p className="text-foreground whitespace-pre-wrap">{track.lyrics}</p>
                               </div>
                             )}
                           </div>
@@ -1303,74 +1360,72 @@ export default function ListenPage() {
         
         {/* Right side - Chat */}
         <div className="w-full md:w-1/2 p-6 flex flex-col h-[calc(100vh-80px)]">
-          <div className="flex justify-between items-center mb-4">
+          <div className="flex justify-between items-center mb-6">
             <div className="flex items-center">
-              <h2 className="text-2xl font-semibold">Chat with {foundry?.name || 'AI Musician'}</h2>
+              <h2 className="text-2xl font-bold text-foreground">Chat with {foundry?.name || 'AI Musician'}</h2>
               
-              {/* Information icon with tooltip */}
               <div className="relative ml-2 group">
                 <button 
-                  className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 flex items-center justify-center text-xs font-bold"
+                  className="w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xs font-bold"
                   aria-label="Information"
                 >
                   i
                 </button>
-                <div className="absolute left-0 bottom-full mb-2 w-64 p-2 bg-white dark:bg-gray-800 rounded shadow-lg text-xs z-10 hidden group-hover:block">
-                  <p className="mb-1"><strong>How to use:</strong></p>
-                  <p className="mb-1">1. Use <strong>Send</strong> to chat with the AI and guide its artistic direction.</p>
-                  <p>2. Use <strong>Create Track</strong> to generate music based on your prompt.</p>
+                <div className="absolute left-0 bottom-full mb-2 w-64 p-3 bg-card rounded-lg shadow-lg text-xs z-10 hidden group-hover:block border border-border">
+                  <p className="mb-2 font-semibold">How to use:</p>
+                  <p className="mb-2 text-muted-foreground">1. Use <strong>Send</strong> to chat with the AI and guide its artistic direction.</p>
+                  <p className="text-muted-foreground">2. Use <strong>Create Track</strong> to generate music based on your prompt.</p>
                 </div>
               </div>
             </div>
             
-            {/* Options menu */}
             <div className="relative">
               <button 
                 onClick={() => setShowOptions(!showOptions)}
-                className="p-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10"
+                className="p-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
                 aria-label="Options"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="1"></circle>
                   <circle cx="19" cy="12" r="1"></circle>
                   <circle cx="5" cy="12" r="1"></circle>
                 </svg>
               </button>
               
+              {/* Improved options menu */}
               {showOptions && (
-                <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 z-10 options-menu">
-                  <div className="py-1" role="menu" aria-orientation="vertical">
-                    <div className="px-4 py-2 text-sm text-gray-700 dark:text-gray-200">
+                <div className="absolute right-0 mt-2 w-64 rounded-lg shadow-lg bg-card border border-border ring-1 ring-black ring-opacity-5 z-10 options-menu animate-fadeIn">
+                  <div className="py-2" role="menu" aria-orientation="vertical">
+                    <div className="px-4 py-3 text-sm">
                       <div className="flex items-center justify-between">
-                        <span>Instrumental Only</span>
+                        <span className="font-medium">Instrumental Only</span>
                         <button 
                           onClick={() => setInstrumental(!instrumental)}
-                          className={`relative inline-flex h-6 w-11 items-center rounded-full ${instrumental ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'}`}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${instrumental ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'}`}
                         >
                           <span 
-                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${instrumental ? 'translate-x-6' : 'translate-x-1'}`} 
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform duration-200 ${instrumental ? 'translate-x-6' : 'translate-x-1'}`} 
                           />
                         </button>
                       </div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      <p className="text-xs text-muted-foreground mt-1">
                         {instrumental ? 'Generate music without lyrics' : 'Generate music with lyrics'}
                       </p>
                     </div>
                     
-                    {/* Add the autonomous thinking toggle */}
-                    <div className="px-4 py-2 text-sm text-gray-700 dark:text-gray-200 border-t border-gray-200 dark:border-gray-700">
+                    <div className="px-4 py-3 text-sm border-t border-border">
                       <div className="flex items-center justify-between">
-                        <span>Create Autonomously</span>
+                        <span className="font-medium">Create Autonomously</span>
                         <button 
                           onClick={() => setAutonomousMode(!autonomousMode)}
-                          className={`relative inline-flex h-6 w-11 items-center rounded-full ${autonomousMode ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'}`}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${autonomousMode ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'}`}
                         >
                           <span 
-                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${autonomousMode ? 'translate-x-6' : 'translate-x-1'}`} 
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform duration-200 ${autonomousMode ? 'translate-x-6' : 'translate-x-1'}`} 
                           />
                         </button>
                       </div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      <p className="text-xs text-muted-foreground mt-1">
                         {autonomousMode ? 'AI will generate thoughts and music autonomously' : 'AI will respond to your messages'}
                       </p>
                     </div>
@@ -1386,16 +1441,27 @@ export default function ListenPage() {
             </div>
           )}
           
-          <div className="flex-1 overflow-y-auto mb-4 bg-black/5 dark:bg-white/10 rounded-lg p-4">
+          {/* Improved message container */}
+          <div className="flex-1 overflow-y-auto mb-4 bg-black/5 dark:bg-white/5 rounded-xl p-4 custom-scrollbar">
             {loading ? (
               <div className="flex items-center justify-center h-full">
-                <p>Loading conversation...</p>
+                <div className="flex flex-col items-center">
+                  <div className="relative w-12 h-12">
+                    <div className="absolute top-0 left-0 w-full h-full border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
+                  </div>
+                  <p className="mt-4 text-muted-foreground">Loading conversation...</p>
+                </div>
               </div>
             ) : messages.length === 0 ? (
               <div className="flex items-center justify-center h-full text-center">
                 <div>
-                  <p className="mb-2">No messages yet</p>
-                  <p className="text-gray-600 dark:text-gray-400">
+                  <div className="w-16 h-16 bg-primary/10 rounded-full mx-auto mb-4 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                  </div>
+                  <p className="text-lg font-medium mb-2">No messages yet</p>
+                  <p className="text-muted-foreground">
                     Start a conversation with {foundry?.name || 'the AI musician'}
                   </p>
                 </div>
@@ -1409,16 +1475,28 @@ export default function ListenPage() {
                     : [];
                     
                   return (
-                    <div key={message.id || `message-${index}`}>
+                    <div key={message.id || `message-${index}`} className="animate-fadeIn">
                       <div 
-                        className={`p-3 rounded-lg ${
+                        className={`p-4 rounded-xl ${
                           message.role === 'user' 
-                            ? 'bg-primary text-primary-foreground ml-8' 
-                            : 'bg-muted dark:bg-muted/40 mr-8'
+                            ? 'bg-primary text-primary-foreground ml-12' 
+                            : 'bg-muted dark:bg-muted/40 mr-12'
                         }`}
                       >
-                        <div className="font-medium mb-1 text-sm">
-                          {message.role === 'user' ? 'You' : foundry?.name || 'AI Musician'}
+                        <div className="flex items-center mb-2">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-2 ${
+                            message.role === 'user' 
+                              ? 'bg-primary-foreground/20 text-primary-foreground' 
+                              : 'bg-primary/10 text-primary'
+                          }`}>
+                            {message.role === 'user' ? 'Y' : 'A'}
+                          </div>
+                          <div className="font-medium text-sm">
+                            {message.role === 'user' ? 'You' : foundry?.name || 'AI Musician'}
+                          </div>
+                          <div className="text-xs opacity-70 ml-auto">
+                            {new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                          </div>
                         </div>
                         <div className={message.role === 'user' ? 'text-sm' : 'prose dark:prose-invert prose-sm max-w-none text-sm'}>
                           {message.role === 'user' ? (
@@ -1427,21 +1505,20 @@ export default function ListenPage() {
                             <ReactMarkdown>{message.content}</ReactMarkdown>
                           )}
                         </div>
-                        <div className="text-xs opacity-70 mt-1">
-                          {new Date(message.timestamp).toLocaleTimeString()}
-                        </div>
                       </div>
                       
-                      {/* Display thoughts below the assistant's message */}
+                      {/* Improved thoughts display */}
                       {message.role === 'assistant' && thoughts.length > 0 && index === messages.length - 1 && (
-                        <div className="ml-4 mr-12 mt-1 mb-3 text-xs text-muted-foreground space-y-1">
+                        <div className="ml-8 mr-12 mt-2 mb-4 text-xs space-y-2 animate-fadeIn">
+                          <div className="text-muted-foreground font-medium uppercase tracking-wider text-[10px] ml-2">
+                            AI Thoughts
+                          </div>
                           {thoughts.map((thought, i) => {
-                            // Skip the kin_response step as it's already shown in the message
                             if (thought.step === 'kin_response') return null;
                             
                             return (
-                              <div key={`thought-${i}`} className="bg-muted dark:bg-muted/30 p-2 rounded">
-                                <div className="font-medium mb-1">
+                              <div key={`thought-${i}`} className="bg-muted/50 dark:bg-muted/20 p-3 rounded-lg border-l-2 border-primary/50">
+                                <div className="font-medium mb-1 text-primary/80">
                                   {thought.step === 'keywords' ? 'Keywords' : 
                                    thought.step === 'dream' ? 'Dream' : 
                                    thought.step === 'daydreaming' ? 'Daydreaming' : 
@@ -1451,14 +1528,14 @@ export default function ListenPage() {
                                 {thought.step === 'keywords' ? (
                                   <div>
                                     {thought.content.relevant_keywords && (
-                                      <div><span className="font-medium">Keywords:</span> {thought.content.relevant_keywords.join(', ')}</div>
+                                      <div className="mb-1"><span className="font-medium text-muted-foreground">Keywords:</span> {thought.content.relevant_keywords.join(', ')}</div>
                                     )}
                                     {thought.content.emotions && (
-                                      <div><span className="font-medium">Emotions:</span> {thought.content.emotions.join(', ')}</div>
+                                      <div><span className="font-medium text-muted-foreground">Emotions:</span> {thought.content.emotions.join(', ')}</div>
                                     )}
                                   </div>
                                 ) : (
-                                  <div>{typeof thought.content === 'string' 
+                                  <div className="text-foreground">{typeof thought.content === 'string' 
                                     ? thought.content 
                                     : JSON.stringify(thought.content)}</div>
                                 )}
@@ -1470,51 +1547,64 @@ export default function ListenPage() {
                     </div>
                   );
                 })}
+                
+                {/* Improved typing indicator */}
                 {sending && (
-                  <div className="bg-black/10 dark:bg-white/20 p-3 rounded-lg mr-8">
-                    <div className="font-medium mb-1 text-sm">
-                      {foundry?.name || 'AI Musician'}
+                  <div className="bg-muted dark:bg-muted/40 p-4 rounded-xl mr-12 animate-fadeIn">
+                    <div className="flex items-center mb-2">
+                      <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center mr-2">
+                        A
+                      </div>
+                      <div className="font-medium text-sm">
+                        {foundry?.name || 'AI Musician'}
+                      </div>
                     </div>
-                    <div className="flex space-x-1">
-                      <span className="animate-bounce">.</span>
-                      <span className="animate-bounce" style={{ animationDelay: '0.2s' }}>.</span>
-                      <span className="animate-bounce" style={{ animationDelay: '0.4s' }}>.</span>
+                    <div className="flex space-x-2 items-center h-6 pl-2">
+                      <span className="w-2 h-2 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                      <span className="w-2 h-2 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                      <span className="w-2 h-2 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: '300ms' }}></span>
                     </div>
                   </div>
                 )}
                 
-                {/* Show thinking indicator when in autonomous mode */}
+                {/* Improved thinking indicator */}
                 {autonomousMode && thinking && (
-                  <div className="bg-black/10 dark:bg-white/20 p-3 rounded-lg mr-8">
-                    <div className="font-medium mb-1 text-sm">
-                      {foundry?.name || 'AI Musician'} is thinking...
+                  <div className="bg-muted dark:bg-muted/40 p-4 rounded-xl mr-12 animate-fadeIn">
+                    <div className="flex items-center mb-2">
+                      <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center mr-2">
+                        A
+                      </div>
+                      <div className="font-medium text-sm">
+                        {foundry?.name || 'AI Musician'} is thinking...
+                      </div>
                     </div>
-                    <div className="flex space-x-1">
-                      <span className="animate-bounce">.</span>
-                      <span className="animate-bounce" style={{ animationDelay: '0.2s' }}>.</span>
-                      <span className="animate-bounce" style={{ animationDelay: '0.4s' }}>.</span>
+                    <div className="flex space-x-2 items-center h-6 pl-2">
+                      <span className="w-2 h-2 rounded-full bg-primary/60 animate-pulse" style={{ animationDelay: '0ms' }}></span>
+                      <span className="w-2 h-2 rounded-full bg-primary/60 animate-pulse" style={{ animationDelay: '150ms' }}></span>
+                      <span className="w-2 h-2 rounded-full bg-primary/60 animate-pulse" style={{ animationDelay: '300ms' }}></span>
                     </div>
                     
-                    {/* Show the most recent thoughts as they arrive */}
+                    {/* Show the most recent thought */}
                     {thoughts.length > 0 && (
-                      <div className="mt-2 text-xs text-gray-600 dark:text-gray-400">
-                        <div className="font-medium">Latest thought:</div>
-                        <div className="bg-gray-100 dark:bg-gray-800 p-2 rounded mt-1">
-                          {thoughts[thoughts.length - 1].step === 'keywords' ? (
-                            <div>
-                              {thoughts[thoughts.length - 1].content.relevant_keywords && (
-                                <div><span className="font-medium">Keywords:</span> {thoughts[thoughts.length - 1].content.relevant_keywords.join(', ')}</div>
-                              )}
-                              {thoughts[thoughts.length - 1].content.emotions && (
-                                <div><span className="font-medium">Emotions:</span> {thoughts[thoughts.length - 1].content.emotions.join(', ')}</div>
-                              )}
-                            </div>
-                          ) : (
-                            <div>{typeof thoughts[thoughts.length - 1].content === 'string' 
-                              ? thoughts[thoughts.length - 1].content 
-                              : JSON.stringify(thoughts[thoughts.length - 1].content)}</div>
-                          )}
+                      <div className="mt-3 text-xs bg-black/5 dark:bg-white/5 p-3 rounded-lg animate-fadeIn">
+                        <div className="font-medium mb-1 text-primary/80">
+                          Latest thought: {thoughts[thoughts.length - 1].step === 'keywords' ? 'Keywords' : 
+                           thoughts[thoughts.length - 1].step === 'dream' ? 'Dream' : 
+                           thoughts[thoughts.length - 1].step === 'daydreaming' ? 'Daydreaming' : 
+                           thoughts[thoughts.length - 1].step === 'initiative' ? 'Initiative' : 
+                           thoughts[thoughts.length - 1].step.charAt(0).toUpperCase() + thoughts[thoughts.length - 1].step.slice(1)}
                         </div>
+                        {thoughts[thoughts.length - 1].step === 'keywords' ? (
+                          <div>
+                            {thoughts[thoughts.length - 1].content.relevant_keywords && (
+                              <div><span className="font-medium text-muted-foreground">Keywords:</span> {thoughts[thoughts.length - 1].content.relevant_keywords.join(', ')}</div>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="text-foreground line-clamp-2">{typeof thoughts[thoughts.length - 1].content === 'string' 
+                            ? thoughts[thoughts.length - 1].content 
+                            : JSON.stringify(thoughts[thoughts.length - 1].content)}</div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -1524,35 +1614,42 @@ export default function ListenPage() {
             )}
           </div>
           
+          {/* Improved message input */}
           <form onSubmit={handleSendMessage} className="flex flex-col">
-            
-            <div className="flex mb-2">
+            <div className="flex rounded-xl overflow-hidden border border-border shadow-sm focus-within:ring-2 focus-within:ring-primary/50 transition-all">
               <input
                 type="text"
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 placeholder="Type your message..."
-                className="flex-1 p-3 border border-input rounded-l-lg bg-background text-foreground"
+                className="flex-1 p-4 bg-background text-foreground focus:outline-none"
                 disabled={sending}
               />
               <button
                 type="submit"
-                className="bg-foreground text-background px-4 py-2 rounded-none font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                className="bg-foreground text-background px-5 py-4 font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center"
                 disabled={sending || !newMessage.trim()}
               >
-                {sending ? 'Sending...' : 'Send'}
+                <span className="mr-2">Send</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="22" y1="2" x2="11" y2="13"></line>
+                  <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
               </button>
               <button
                 type="button"
                 onClick={handleCreateTrack}
-                className="bg-primary text-primary-foreground px-4 py-2 rounded-r-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                className="bg-primary text-primary-foreground px-5 py-4 font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center"
                 disabled={sending || !newMessage.trim()}
               >
-                {createButtonText}
+                <span className="mr-2">{createButtonText}</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 18V5l12-2v13"></path>
+                  <circle cx="6" cy="18" r="3"></circle>
+                  <circle cx="18" cy="16" r="3"></circle>
+                </svg>
               </button>
             </div>
-            
-            {/* Status indicators moved to the music player area */}
           </form>
         </div>
       </main>
