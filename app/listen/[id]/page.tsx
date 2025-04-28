@@ -400,7 +400,12 @@ export default function ListenPage() {
   
   // Add function to compile thinking results
   const compileThinkingResults = () => {
-    if (thoughts.length === 0) return null;
+    if (thoughts.length === 0) {
+      console.log('[UI] No thoughts available to compile');
+      return null;
+    }
+    
+    console.log('[UI] Compiling thinking results from', thoughts.length, 'thoughts');
     
     const keywordsThought = thoughts.find(t => t.step === 'keywords');
     const dreamThought = thoughts.find(t => t.step === 'dream');
@@ -409,26 +414,41 @@ export default function ListenPage() {
     
     // Create a comprehensive prompt from the thinking results
     let trackPrompt = "Create a track based on these thoughts:\n\n";
+    let hasContent = false;
     
     if (keywordsThought && keywordsThought.content) {
+      console.log('[UI] Adding keywords to prompt');
       const keywords = keywordsThought.content.relevant_keywords || [];
       const emotions = keywordsThought.content.emotions || [];
       trackPrompt += `Keywords: ${keywords.join(', ')}\n`;
       trackPrompt += `Emotions: ${emotions.join(', ')}\n\n`;
+      hasContent = true;
     }
     
     if (dreamThought && dreamThought.content) {
+      console.log('[UI] Adding dream to prompt');
       trackPrompt += `Dream: ${dreamThought.content}\n\n`;
+      hasContent = true;
     }
     
     if (daydreamingThought && daydreamingThought.content) {
+      console.log('[UI] Adding daydreaming to prompt');
       trackPrompt += `Daydreaming: ${daydreamingThought.content}\n\n`;
+      hasContent = true;
     }
     
     if (initiativeThought && initiativeThought.content) {
+      console.log('[UI] Adding initiative to prompt');
       trackPrompt += `Initiative: ${initiativeThought.content}\n\n`;
+      hasContent = true;
     }
     
+    if (!hasContent) {
+      console.log('[UI] No content was added to the prompt');
+      return null;
+    }
+    
+    console.log('[UI] Compiled prompt:', trackPrompt);
     return trackPrompt;
   };
 
