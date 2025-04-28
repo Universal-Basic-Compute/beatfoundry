@@ -1424,7 +1424,7 @@ export default function ListenPage() {
                               </button>
                               
                               {trackMenuOpen === track.id && (
-                                <div className="absolute right-0 mt-1 w-36 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 z-10 track-menu">
+                                <div className="absolute right-0 mt-1 w-36 rounded-md shadow-lg bg-background border border-border z-10 track-menu">
                                   <div className="py-1" role="menu" aria-orientation="vertical">
                                     <button
                                       onClick={(e) => {
@@ -1432,7 +1432,7 @@ export default function ListenPage() {
                                         handleDownloadTrack(track);
                                         setTrackMenuOpen(null);
                                       }}
-                                      className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                      className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-muted"
                                       role="menuitem"
                                     >
                                       Download
@@ -1466,7 +1466,7 @@ export default function ListenPage() {
     
                         {/* Reaction popup */}
                         {showReactionPopup === track.id && (
-                          <div className="absolute z-20 bg-card shadow-lg rounded-lg p-2 border border-border mt-2 animate-fadeIn reaction-popup">
+                          <div className="absolute z-20 bg-background shadow-lg rounded-lg p-2 border border-border mt-2 animate-fadeIn reaction-popup">
                             <div className="text-xs font-medium mb-2 text-muted-foreground">Add reaction:</div>
                             <div className="grid grid-cols-5 gap-2">
                               {reactionTypes.map(({ emoji, description }) => (
@@ -1560,17 +1560,17 @@ export default function ListenPage() {
               
               {/* Improved options menu */}
               {showOptions && (
-                <div className="absolute right-0 mt-2 w-64 rounded-lg shadow-lg bg-card border border-border ring-1 ring-black ring-opacity-5 z-10 options-menu animate-fadeIn">
+                <div className="absolute right-0 mt-2 w-64 rounded-lg shadow-lg bg-background border border-border z-10 options-menu animate-fadeIn">
                   <div className="py-2" role="menu" aria-orientation="vertical">
                     <div className="px-4 py-3 text-sm">
                       <div className="flex items-center justify-between">
                         <span className="font-medium">Instrumental Only</span>
                         <button 
                           onClick={() => setInstrumental(!instrumental)}
-                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${instrumental ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'}`}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${instrumental ? 'bg-primary' : 'bg-muted'}`}
                         >
                           <span 
-                            className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform duration-200 ${instrumental ? 'translate-x-6' : 'translate-x-1'}`} 
+                            className={`inline-block h-4 w-4 transform rounded-full bg-background shadow-md transition-transform duration-200 ${instrumental ? 'translate-x-6' : 'translate-x-1'}`} 
                           />
                         </button>
                       </div>
