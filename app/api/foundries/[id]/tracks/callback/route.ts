@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createTrack } from '@/lib/airtable';
 
 // This endpoint will receive callbacks from SUNO API when music generation is complete
 export async function POST(
@@ -11,21 +12,44 @@ export async function POST(
     const body = await request.json();
     console.log(`Received SUNO API callback for foundry ${foundryId}:`, body);
     
-    // Here you would typically:
-    // 1. Store the generated music URLs in your database
-    // 2. Update the UI to show the new track
-    // 3. Notify users if needed
-    
-    // For now, we'll just log the callback data
+    // Store the generated music URLs in Airtable
     if (body.code === 200 && body.data) {
       const tracks = body.data.data;
       
       if (tracks && tracks.length > 0) {
         console.log('Generated tracks:', tracks);
         
-        // Here you could store the tracks in your database
-        // For example:
-        // await storeGeneratedTracks(foundryId, tracks);
+        // Store each track in Airtable
+        for (const track of tracks) {
+          try {
+            // Extract track details
+            const {
+              audio_url,
+              title,
+              prompt,
+              tags,
+              duration,
+            } = track;
+            
+            // Get the lyrics from the request metadata
+            // This assumes we've stored the track parameters somewhere
+            // For now, we'll use a placeholder
+            const lyrics = prompt || "No lyrics available";
+            
+            // Store in Airtable
+            await createTrack(
+              foundryId,
+              title,
+              prompt,
+              lyrics,
+              audio_url
+            );
+            
+            console.log(`Stored track "${title}" in Airtable`);
+          } catch (trackError) {
+            console.error('Error storing track:', trackError);
+          }
+        }
       }
     }
     

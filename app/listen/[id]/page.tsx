@@ -18,6 +18,16 @@ type Foundry = {
   description: string;
 };
 
+type Track = {
+  id: string;
+  name: string;
+  prompt: string;
+  lyrics: string;
+  url: string;
+  createdAt: string;
+  foundryId: string;
+};
+
 export default function ListenPage() {
   const params = useParams();
   const foundryId = params.id as string;
@@ -32,7 +42,14 @@ export default function ListenPage() {
   const [trackCreated, setTrackCreated] = useState(false);
   const [trackError, setTrackError] = useState<string | null>(null);
   
+  // Add state for tracks
+  const [tracks, setTracks] = useState<Track[]>([]);
+  const [loadingTracks, setLoadingTracks] = useState(true);
+  const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
   
   // Fetch foundry details
   useEffect(() => {
@@ -70,6 +87,47 @@ export default function ListenPage() {
     
     fetchMessages();
   }, [foundryId]);
+  
+  // Fetch tracks
+  useEffect(() => {
+    const fetchTracks = async () => {
+      try {
+        setLoadingTracks(true);
+        const response = await fetch(`/api/foundries/${foundryId}/tracks`);
+        if (!response.ok) throw new Error('Failed to fetch tracks');
+        const data = await response.json();
+        setTracks(data);
+        
+        // Set the first track as current if available
+        if (data.length > 0 && !currentTrack) {
+          setCurrentTrack(data[0]);
+        }
+      } catch (err) {
+        console.error('Error fetching tracks:', err);
+      } finally {
+        setLoadingTracks(false);
+      }
+    };
+    
+    fetchTracks();
+    
+    // Set up polling to check for new tracks every 30 seconds
+    const intervalId = setInterval(fetchTracks, 30000);
+    
+    return () => clearInterval(intervalId);
+  }, [foundryId, currentTrack]);
+  
+  // Handle audio playback
+  useEffect(() => {
+    if (currentTrack && audioRef.current) {
+      audioRef.current.src = currentTrack.url;
+      if (isPlaying) {
+        audioRef.current.play().catch(err => {
+          console.error('Error playing audio:', err);
+        });
+      }
+    }
+  }, [currentTrack, isPlaying]);
   
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -157,12 +215,61 @@ export default function ListenPage() {
       
       setTrackCreated(true);
       setNewMessage('');
+      
+      // Refresh tracks after a short delay to give time for processing
+      setTimeout(() => {
+        fetch(`/api/foundries/${foundryId}/tracks`)
+          .then(res => res.json())
+          .then(data => {
+            setTracks(data);
+            if (data.length > 0) {
+              setCurrentTrack(data[0]);
+            }
+          })
+          .catch(err => console.error('Error fetching updated tracks:', err));
+      }, 5000);
     } catch (err) {
       console.error('Error creating track:', err);
       setTrackError('Failed to create track. Please try again.');
     } finally {
       setCreatingTrack(false);
     }
+  };
+  
+  const playTrack = (track: Track) => {
+    setCurrentTrack(track);
+    setIsPlaying(true);
+  };
+  
+  const togglePlayPause = () => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+      } else {
+        audioRef.current.play().catch(err => {
+          console.error('Error playing audio:', err);
+        });
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+  
+  const playNextTrack = () => {
+    if (tracks.length === 0 || !currentTrack) return;
+    
+    const currentIndex = tracks.findIndex(track => track.id === currentTrack.id);
+    const nextIndex = (currentIndex + 1) % tracks.length;
+    setCurrentTrack(tracks[nextIndex]);
+    setIsPlaying(true);
+  };
+  
+  const playPreviousTrack = () => {
+    if (tracks.length === 0 || !currentTrack) return;
+    
+    const currentIndex = tracks.findIndex(track => track.id === currentTrack.id);
+    const prevIndex = (currentIndex - 1 + tracks.length) % tracks.length;
+    setCurrentTrack(tracks[prevIndex]);
+    setIsPlaying(true);
   };
   
   return (
@@ -175,32 +282,91 @@ export default function ListenPage() {
       </header>
       
       <main className="flex-1 flex flex-col md:flex-row max-w-6xl mx-auto w-full">
-        {/* Left side - Music Player (placeholder) */}
+        {/* Left side - Music Player */}
         <div className="w-full md:w-1/2 p-6 border-r">
           <div className="bg-black/5 dark:bg-white/10 rounded-lg p-6 h-full flex flex-col">
             <h2 className="text-2xl font-semibold mb-4">Music Player</h2>
-            <div className="flex-1 flex items-center justify-center">
-              <div className="text-center">
-                <div className="w-48 h-48 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto mb-6 flex items-center justify-center">
-                  <span className="text-4xl">🎵</span>
-                </div>
-                <p className="text-lg font-medium">Now Playing</p>
-                <p className="text-gray-600 dark:text-gray-400">
-                  {foundry ? foundry.name : 'Loading...'}
-                </p>
-                <div className="mt-6 flex justify-center space-x-4">
-                  <button className="p-3 rounded-full bg-foreground text-background">
-                    <span>⏮️</span>
-                  </button>
-                  <button className="p-3 rounded-full bg-foreground text-background">
-                    <span>▶️</span>
-                  </button>
-                  <button className="p-3 rounded-full bg-foreground text-background">
-                    <span>⏭️</span>
-                  </button>
+            
+            {loadingTracks ? (
+              <div className="flex-1 flex items-center justify-center">
+                <p>Loading tracks...</p>
+              </div>
+            ) : tracks.length === 0 ? (
+              <div className="flex-1 flex items-center justify-center text-center">
+                <div>
+                  <div className="w-48 h-48 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto mb-6 flex items-center justify-center">
+                    <span className="text-4xl">🎵</span>
+                  </div>
+                  <p className="text-lg font-medium">No tracks yet</p>
+                  <p className="text-gray-600 dark:text-gray-400 mt-2">
+                    Use the "Create Track" button to generate music
+                  </p>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="flex-1 flex flex-col">
+                <div className="flex-1 overflow-y-auto mb-4">
+                  <div className="text-center mb-6">
+                    <div className="w-48 h-48 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto mb-6 flex items-center justify-center">
+                      <span className="text-4xl">🎵</span>
+                    </div>
+                    <p className="text-lg font-medium">Now Playing</p>
+                    <p className="text-gray-600 dark:text-gray-400">
+                      {currentTrack ? currentTrack.name : 'Select a track'}
+                    </p>
+                    <div className="mt-6 flex justify-center space-x-4">
+                      <button 
+                        onClick={playPreviousTrack}
+                        className="p-3 rounded-full bg-foreground text-background"
+                        disabled={!currentTrack}
+                      >
+                        <span>⏮️</span>
+                      </button>
+                      <button 
+                        onClick={togglePlayPause}
+                        className="p-3 rounded-full bg-foreground text-background"
+                        disabled={!currentTrack}
+                      >
+                        <span>{isPlaying ? '⏸️' : '▶️'}</span>
+                      </button>
+                      <button 
+                        onClick={playNextTrack}
+                        className="p-3 rounded-full bg-foreground text-background"
+                        disabled={!currentTrack}
+                      >
+                        <span>⏭️</span>
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <h3 className="font-semibold mb-2">Track List</h3>
+                  <div className="space-y-2">
+                    {tracks.map(track => (
+                      <div 
+                        key={track.id}
+                        className={`p-3 rounded-lg cursor-pointer hover:bg-black/10 dark:hover:bg-white/10 ${
+                          currentTrack?.id === track.id ? 'bg-black/10 dark:bg-white/10' : ''
+                        }`}
+                        onClick={() => playTrack(track)}
+                      >
+                        <div className="font-medium">{track.name}</div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400 truncate">
+                          {new Date(track.createdAt).toLocaleDateString()}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Hidden audio element */}
+                <audio 
+                  ref={audioRef}
+                  onEnded={playNextTrack}
+                  onPlay={() => setIsPlaying(true)}
+                  onPause={() => setIsPlaying(false)}
+                />
+              </div>
+            )}
           </div>
         </div>
         

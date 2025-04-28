@@ -1,6 +1,51 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendChannelMessage } from '@/lib/kinos-messages-api';
 import { generateMusic } from '@/lib/suno-api';
+import { getTracksByFoundryId } from '@/lib/airtable';
+
+// Add a GET method to fetch tracks
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const foundryId = params.id;
+  
+  try {
+    const tracks = await getTracksByFoundryId(foundryId);
+    return NextResponse.json(tracks);
+  } catch (error) {
+    console.error('Error fetching tracks:', error);
+    
+    // For development, return mock data if the API call fails
+    if (process.env.NODE_ENV !== 'production') {
+      return NextResponse.json([
+        {
+          id: 'mock-track-1',
+          name: 'Digital Rain',
+          prompt: 'Create an electronic ambient track with deep bass',
+          lyrics: 'Digital rain washing over me...',
+          url: 'https://example.com/track1.mp3',
+          createdAt: new Date().toISOString(),
+          foundryId,
+        },
+        {
+          id: 'mock-track-2',
+          name: 'Neon Dreams',
+          prompt: 'A synthwave track with retro vibes',
+          lyrics: 'In the glow of neon lights...',
+          url: 'https://example.com/track2.mp3',
+          createdAt: new Date(Date.now() - 86400000).toISOString(),
+          foundryId,
+        },
+      ]);
+    }
+    
+    return NextResponse.json(
+      { error: 'Failed to fetch tracks' },
+      { status: 500 }
+    );
+  }
+}
 
 export async function POST(
   request: NextRequest,

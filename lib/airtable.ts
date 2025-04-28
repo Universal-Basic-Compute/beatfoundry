@@ -13,6 +13,9 @@ const base = new Airtable({ apiKey }).base(baseId || '');
 // Get the FOUNDRIES table
 const foundryTable = base('FOUNDRIES');
 
+// Get the TRACKS table
+const trackTable = base('TRACKS');
+
 export async function getFoundries() {
   try {
     const records = await foundryTable.select().all();
@@ -89,6 +92,66 @@ export async function getFoundryById(id: string) {
     };
   } catch (error) {
     console.error('Error fetching foundry by ID from Airtable:', error);
+    throw error;
+  }
+}
+
+export async function createTrack(
+  foundryId: string,
+  title: string,
+  prompt: string,
+  lyrics: string,
+  audioUrl: string
+) {
+  try {
+    const records = await trackTable.create([
+      {
+        fields: {
+          Name: title,
+          Prompt: prompt,
+          Lyrics: lyrics,
+          Url: audioUrl,
+          CreatedAt: new Date().toISOString(),
+          FoundryId: foundryId,
+        },
+      },
+    ]);
+    
+    return {
+      id: records[0].id,
+      name: records[0].get('Name') as string,
+      prompt: records[0].get('Prompt') as string,
+      lyrics: records[0].get('Lyrics') as string,
+      url: records[0].get('Url') as string,
+      createdAt: records[0].get('CreatedAt') as string,
+      foundryId: records[0].get('FoundryId') as string,
+    };
+  } catch (error) {
+    console.error('Error creating track in Airtable:', error);
+    throw error;
+  }
+}
+
+export async function getTracksByFoundryId(foundryId: string) {
+  try {
+    const records = await trackTable
+      .select({
+        filterByFormula: `{FoundryId} = '${foundryId}'`,
+        sort: [{ field: 'CreatedAt', direction: 'desc' }],
+      })
+      .all();
+    
+    return records.map(record => ({
+      id: record.id,
+      name: record.get('Name') as string,
+      prompt: record.get('Prompt') as string,
+      lyrics: record.get('Lyrics') as string,
+      url: record.get('Url') as string,
+      createdAt: record.get('CreatedAt') as string,
+      foundryId: record.get('FoundryId') as string,
+    }));
+  } catch (error) {
+    console.error('Error fetching tracks from Airtable:', error);
     throw error;
   }
 }
