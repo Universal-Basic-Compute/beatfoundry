@@ -328,6 +328,7 @@ export default function ListenPage() {
       console.log(`[UI] Track creation successful:`, data);
       console.log(`[UI] Response data:`, data);
       console.log(`[UI] music_task_id:`, data.music_task_id);
+      console.log(`[UI] music_task_id:`, data.music_task_id);
       
       setTrackCreated(true);
       setNewMessage('');

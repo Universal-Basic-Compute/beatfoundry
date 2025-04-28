@@ -177,6 +177,7 @@ export async function POST(request, { params }) {
       );
       console.log(`[TRACKS] SUNO API response:`, musicResponse);
       console.log(`[TRACKS] Task ID from SUNO API:`, musicResponse?.data?.task_id);
+      console.log(`[TRACKS] Task ID from SUNO API:`, musicResponse?.data?.task_id);
     } catch (musicError) {
       console.error(`[TRACKS] Error generating music with SUNO API:`, musicError);
       // Continue without music generation in case of error
@@ -195,6 +196,7 @@ export async function POST(request, { params }) {
     };
     
     console.log(`[TRACKS] Returning response to client:`, responseData);
+    console.log(`[TRACKS] Response includes music_task_id:`, responseData.music_task_id);
     console.log(`[TRACKS] Response includes music_task_id:`, responseData.music_task_id);
     
     return NextResponse.json(responseData);
