@@ -310,7 +310,6 @@ export default function ListenPage() {
     if (thinking) return;
     
     setThinking(true);
-    // Don't clear thoughts here, as we want to keep displaying them while new ones arrive
     
     try {
       console.log(`[UI] Triggering autonomous thinking for foundry ID: ${foundryId}`);
@@ -329,19 +328,46 @@ export default function ListenPage() {
       }
       
       const data = await response.json();
-      console.log(`[UI] Autonomous thinking initiated:`, data);
+      console.log(`[UI] Autonomous thinking response:`, data);
       
-      // We don't need to set thoughts here as they will come in via SSE
-      // Instead, we'll refresh messages after a delay to show any new messages
-      setTimeout(async () => {
-        // Refresh messages to show any new thoughts that became messages
-        const messagesResponse = await fetch(`/api/foundries/${foundryId}/messages`);
-        if (messagesResponse.ok) {
-          const messagesData = await messagesResponse.json();
-          setMessages(messagesData.messages || []);
-        }
+      // Check if we have steps in the response (sync mode)
+      if (data.steps && Array.isArray(data.steps)) {
+        // Update thoughts state with all steps
+        setThoughts(data.steps.map(step => ({
+          step: step.step,
+          content: step.content,
+          timestamp: new Date().toISOString()
+        })));
         
-        // Set thinking to false after a reasonable delay
+        // Find the initiative step
+        const initiativeStep = data.steps.find(step => step.step === 'initiative');
+        
+        if (initiativeStep && initiativeStep.content) {
+          console.log('[UI] Found initiative step, creating track');
+          
+          // Create a prompt from just the initiative
+          const prompt = `Create a track based on this initiative:\n\n${
+            typeof initiativeStep.content === 'string' 
+              ? initiativeStep.content 
+              : JSON.stringify(initiativeStep.content)
+          }`;
+          
+          console.log('[UI] Creating track with prompt:', prompt);
+          createTrackFromThinking(prompt);
+        } else {
+          console.log('[UI] No initiative step found in response');
+        }
+      }
+      
+      // Refresh messages to show any new thoughts that became messages
+      const messagesResponse = await fetch(`/api/foundries/${foundryId}/messages`);
+      if (messagesResponse.ok) {
+        const messagesData = await messagesResponse.json();
+        setMessages(messagesData.messages || []);
+      }
+      
+      // Set thinking to false after processing
+      setTimeout(() => {
         setThinking(false);
         
         // If autonomous mode is still on, trigger thinking again after a delay
@@ -352,7 +378,7 @@ export default function ListenPage() {
             }
           }, 10000); // Wait 10 seconds before triggering again
         }
-      }, 15000); // Wait 15 seconds for thinking to complete
+      }, 3000);
       
     } catch (error) {
       console.error('[UI] Error triggering autonomous thinking:', error);
@@ -609,38 +635,26 @@ export default function ListenPage() {
               }];
             }
             
-            // Check if we have all the required thinking steps
-            const hasKeywords = newThoughts.some(t => t.step === 'keywords');
-            const hasDream = newThoughts.some(t => t.step === 'dream');
-            const hasDaydreaming = newThoughts.some(t => t.step === 'daydreaming');
+            // Check if we have the initiative step
             const hasInitiative = newThoughts.some(t => t.step === 'initiative');
             
-            console.log('[UI] Checking thinking steps completion:');
-            console.log('[UI] - Keywords:', hasKeywords);
-            console.log('[UI] - Dream:', hasDream);
-            console.log('[UI] - Daydreaming:', hasDaydreaming);
-            console.log('[UI] - Initiative:', hasInitiative);
+            console.log('[UI] Checking for initiative step:', hasInitiative);
             
-            // If we have at least 2 thinking steps, create a track
-            // This is more lenient than requiring all 4 steps
-            const requiredStepsCount = [hasKeywords, hasDream, hasDaydreaming, hasInitiative]
-              .filter(Boolean).length;
-            
-            if (requiredStepsCount >= 2) {
-              console.log('[UI] At least 2 thinking steps complete, creating track');
+            if (hasInitiative) {
+              console.log('[UI] Initiative step received, creating track');
               
               // Wait a moment to ensure all data is processed
               setTimeout(() => {
                 const prompt = compileThinkingResults();
                 if (prompt) {
-                  console.log('[UI] Compiled thinking results into prompt, creating track');
+                  console.log('[UI] Created prompt from initiative, creating track');
                   createTrackFromThinking(prompt);
                 } else {
-                  console.error('[UI] Failed to compile thinking results into prompt');
+                  console.error('[UI] Failed to create prompt from initiative');
                 }
               }, 1000);
             } else {
-              console.log(`[UI] Waiting for more thinking steps (${requiredStepsCount}/4 complete)`);
+              console.log('[UI] Waiting for initiative step');
             }
             
             return newThoughts;
