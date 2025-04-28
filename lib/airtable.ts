@@ -159,6 +159,38 @@ export async function createTrack(
   }
 }
 
+export async function updateTrackUrl(trackId: string, newUrl: string) {
+  console.log(`[AIRTABLE] Updating track URL for track ID: ${trackId}`);
+  console.log(`[AIRTABLE] New URL: ${newUrl}`);
+  
+  try {
+    const updatedRecord = await trackTable.update([
+      {
+        id: trackId,
+        fields: {
+          Url: newUrl,
+        },
+      },
+    ]);
+    
+    console.log(`[AIRTABLE] Track URL updated successfully: ${updatedRecord[0].id}`);
+    
+    return {
+      id: updatedRecord[0].id,
+      name: updatedRecord[0].get('Name') as string,
+      prompt: updatedRecord[0].get('Prompt') as string,
+      lyrics: updatedRecord[0].get('Lyrics') as string,
+      url: updatedRecord[0].get('Url') as string,
+      createdAt: updatedRecord[0].get('CreatedAt') as string,
+      foundryId: updatedRecord[0].get('FoundryId') as string,
+      taskId: updatedRecord[0].get('TaskId') as string,
+    };
+  } catch (error) {
+    console.error('[AIRTABLE] Error updating track URL in Airtable:', error);
+    throw error;
+  }
+}
+
 export async function updateTrackByTaskId(taskId: string, audioUrl: string) {
   console.log(`[AIRTABLE] Updating track with TaskId: "${taskId}"`);
   console.log(`[AIRTABLE] New audio URL: "${audioUrl}"`);

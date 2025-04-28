@@ -49,6 +49,36 @@ export async function POST(request: NextRequest, { params }: any) {
         if (updatedTrack) {
           console.log(`[SAVE-STATUS] Successfully updated track with TaskId ${taskId}`);
           savedTracks.push(updatedTrack);
+            
+          // Download the track
+          try {
+            console.log(`[SAVE-STATUS] Downloading track: ${updatedTrack.name}`);
+              
+            const downloadResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'https://beatsfoundry.vercel.app'}/api/foundries/${foundryId}/tracks/download`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                trackId: updatedTrack.id,
+                audioUrl: audioUrl,
+                title: title
+              }),
+            });
+              
+            if (!downloadResponse.ok) {
+              console.error(`[SAVE-STATUS] Error downloading track:`, await downloadResponse.text());
+            } else {
+              const downloadData = await downloadResponse.json();
+              console.log(`[SAVE-STATUS] Successfully downloaded track to ${downloadData.url}`);
+                
+              // Update the track object with the new URL
+              updatedTrack.url = downloadData.url;
+            }
+          } catch (downloadError) {
+            console.error(`[SAVE-STATUS] Error downloading track:`, downloadError);
+            // Continue anyway, we still have the original URL
+          }
         } else {
           // If no existing track found, create a new one
           console.log(`[SAVE-STATUS] No existing track found, creating new track`);
@@ -60,9 +90,39 @@ export async function POST(request: NextRequest, { params }: any) {
             audioUrl,
             taskId
           );
-          
+            
           console.log(`[SAVE-STATUS] Successfully created new track: ${createdTrack.id}`);
           savedTracks.push(createdTrack);
+            
+          // Download the track
+          try {
+            console.log(`[SAVE-STATUS] Downloading track: ${createdTrack.name}`);
+              
+            const downloadResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'https://beatsfoundry.vercel.app'}/api/foundries/${foundryId}/tracks/download`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                trackId: createdTrack.id,
+                audioUrl: audioUrl,
+                title: title
+              }),
+            });
+              
+            if (!downloadResponse.ok) {
+              console.error(`[SAVE-STATUS] Error downloading track:`, await downloadResponse.text());
+            } else {
+              const downloadData = await downloadResponse.json();
+              console.log(`[SAVE-STATUS] Successfully downloaded track to ${downloadData.url}`);
+                
+              // Update the track object with the new URL
+              createdTrack.url = downloadData.url;
+            }
+          } catch (downloadError) {
+            console.error(`[SAVE-STATUS] Error downloading track:`, downloadError);
+            // Continue anyway, we still have the original URL
+          }
         }
       } catch (trackError) {
         console.error(`[SAVE-STATUS] Error processing track:`, trackError);

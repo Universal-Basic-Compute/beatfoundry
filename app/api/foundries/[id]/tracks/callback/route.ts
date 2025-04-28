@@ -86,6 +86,33 @@ export async function POST(request, { params }) {
             console.log(`[CALLBACK] - Track ID: ${createdTrack.id}`);
             console.log(`[CALLBACK] - Track Name: ${createdTrack.name}`);
             console.log(`[CALLBACK] - Track URL saved to Airtable: ${createdTrack.url}`);
+            
+            // Download the track
+            try {
+              console.log(`[CALLBACK] Downloading track: ${createdTrack.name}`);
+              
+              const downloadResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'https://beatsfoundry.vercel.app'}/api/foundries/${foundryId}/tracks/download`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  trackId: createdTrack.id,
+                  audioUrl: audioUrl,
+                  title: title
+                }),
+              });
+              
+              if (!downloadResponse.ok) {
+                console.error(`[CALLBACK] Error downloading track:`, await downloadResponse.text());
+              } else {
+                const downloadData = await downloadResponse.json();
+                console.log(`[CALLBACK] Successfully downloaded track to ${downloadData.url}`);
+              }
+            } catch (downloadError) {
+              console.error(`[CALLBACK] Error downloading track:`, downloadError);
+              // Continue anyway, we still have the original URL
+            }
           } catch (trackError) {
             console.error('[CALLBACK] Error storing track in Airtable:', trackError);
           }
