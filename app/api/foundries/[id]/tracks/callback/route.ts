@@ -7,6 +7,7 @@ export async function POST(request, { params }) {
   const foundryId = params.id;
   console.log(`[CALLBACK] Received SUNO API callback for foundry ID: ${foundryId}`);
   console.log(`[CALLBACK] Request URL: ${request.url}`);
+  console.log(`[CALLBACK] Request headers:`, JSON.stringify(Object.fromEntries([...request.headers.entries()]), null, 2));
   
   try {
     const body = await request.json();
@@ -21,7 +22,11 @@ export async function POST(request, { params }) {
       console.log('[CALLBACK] Body data structure:', JSON.stringify(body.data, null, 2));
       
       // Check different possible structures
-      const tracks = body.data.data || body.data || [];
+      const tracks = Array.isArray(body.data) ? body.data : 
+                     body.data?.data && Array.isArray(body.data.data) ? body.data.data : 
+                     [body.data]; // Treat as single track if not an array
+      
+      console.log(`[CALLBACK] Extracted tracks array:`, JSON.stringify(tracks, null, 2));
       
       if (tracks && tracks.length > 0) {
         console.log(`[CALLBACK] Found ${tracks.length} tracks to store`);
@@ -33,8 +38,8 @@ export async function POST(request, { params }) {
             
             // Extract track details - handle different possible structures
             const audioUrl = track.audio_url || track.audioUrl || track.url || '';
-            const title = track.title || 'Untitled Track';
-            const prompt = track.prompt || '';
+            const title = track.title || track.name || 'Untitled Track';
+            const prompt = track.prompt || track.description || '';
             
             if (!audioUrl) {
               console.error('[CALLBACK] No audio URL found in track data');

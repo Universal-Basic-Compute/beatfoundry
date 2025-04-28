@@ -96,6 +96,21 @@ export default function ListenPage() {
         const response = await fetch(`/api/foundries/${foundryId}/tracks`);
         if (!response.ok) throw new Error('Failed to fetch tracks');
         const data = await response.json();
+        
+        // If no tracks are found, add a test track for debugging
+        if (data.length === 0) {
+          console.log('[DEBUG] No tracks found, adding test track');
+          data.push({
+            id: 'test-track',
+            name: 'Test Track',
+            prompt: 'Test prompt',
+            lyrics: 'Test lyrics',
+            url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', // Test MP3 URL
+            createdAt: new Date().toISOString(),
+            foundryId: foundryId
+          });
+        }
+        
         setTracks(data);
         
         // Set the first track as current if available
