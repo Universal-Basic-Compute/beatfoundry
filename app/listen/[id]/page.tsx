@@ -96,7 +96,8 @@ export default function ListenPage() {
     { emoji: '💡', description: 'Innovative idea (creative or novel approach)' },
     { emoji: '🔁', description: 'Repetitive (could use more variation)' },
     { emoji: '🌟', description: 'Standout track (exceptional compared to others)' },
-    { emoji: '📈', description: 'Showing improvement/growth (evolutionary progress)' }
+    { emoji: '📈', description: 'Showing improvement/growth (evolutionary progress)' },
+    { emoji: '❌', description: 'Bad track/has errors' }
   ];
   
   // Function to add a reaction
@@ -1449,7 +1450,11 @@ export default function ListenPage() {
                             {Object.entries(track.reactions).map(([emoji, count]) => (
                               <div 
                                 key={emoji} 
-                                className="flex items-center bg-black/5 dark:bg-white/5 px-2 py-1 rounded-full text-xs"
+                                className={`flex items-center px-2 py-1 rounded-full text-xs ${
+                                  emoji === '❌' 
+                                    ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200' 
+                                    : 'bg-black/5 dark:bg-white/5'
+                                }`}
                                 title={reactionTypes.find(r => r.emoji === emoji)?.description || ''}
                               >
                                 <span className="mr-1">{emoji}</span>

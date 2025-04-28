@@ -28,6 +28,7 @@ export type TrackReactions = {
   '🔁'?: number; // Repetitive
   '🌟'?: number; // Standout track
   '📈'?: number; // Showing improvement/growth
+  '❌'?: number; // Bad track/has errors
 };
 
 export async function getFoundries() {
