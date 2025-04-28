@@ -59,49 +59,61 @@ export async function POST(request, { params }) {
             const lyrics = track.lyrics || prompt || "No lyrics available";
             console.log(`[CALLBACK] - Lyrics: "${lyrics.substring(0, 100)}${lyrics.length > 100 ? '...' : ''}"`);
             
-            // Try to update existing track by taskId first
-            if (taskId) {
+            // For multiple tracks from the same task, create a unique title for each
+            const uniqueTitle = tracks.length > 1 
+              ? `${title} (Version ${tracks.indexOf(track) + 1})` 
+              : title;
+            
+            // Try to update existing track by taskId first (only for the first track)
+            let updatedTrack = null;
+            if (taskId && tracks.indexOf(track) === 0) {
               console.log(`[CALLBACK] Attempting to update existing track with TaskId: ${taskId}`);
-              const updatedTrack = await updateTrackByTaskId(taskId, audioUrl);
+              updatedTrack = await updateTrackByTaskId(taskId, audioUrl);
               
               if (updatedTrack) {
                 console.log(`[CALLBACK] Successfully updated track with TaskId ${taskId}`);
-                continue; // Skip creating a new track
               }
             }
             
-            console.log(`[CALLBACK] Creating new track in Airtable: ${title}, URL: ${audioUrl}`);
-            
-            // Store in Airtable
-            const createdTrack = await createTrack(
-              foundryId,
-              title,
-              prompt,
-              lyrics,
-              audioUrl,
-              taskId // Save the taskId with the new track
-            );
-            
-            console.log(`[CALLBACK] Successfully stored track "${title}" in Airtable:`);
-            console.log(`[CALLBACK] - Track ID: ${createdTrack.id}`);
-            console.log(`[CALLBACK] - Track Name: ${createdTrack.name}`);
-            console.log(`[CALLBACK] - Track URL saved to Airtable: ${createdTrack.url}`);
+            // If no existing track found or this is not the first track, create a new one
+            let createdTrack = null;
+            if (!updatedTrack) {
+              console.log(`[CALLBACK] Creating new track in Airtable: ${uniqueTitle}, URL: ${audioUrl}`);
+              
+              // Store in Airtable
+              createdTrack = await createTrack(
+                foundryId,
+                uniqueTitle,
+                prompt,
+                lyrics,
+                audioUrl,
+                tracks.indexOf(track) === 0 ? taskId : null // Only save taskId for the first track
+              );
+              
+              console.log(`[CALLBACK] Successfully stored track "${uniqueTitle}" in Airtable:`);
+              console.log(`[CALLBACK] - Track ID: ${createdTrack.id}`);
+              console.log(`[CALLBACK] - Track Name: ${createdTrack.name}`);
+              console.log(`[CALLBACK] - Track URL saved to Airtable: ${createdTrack.url}`);
+            }
             
             // Download the track
-            try {
-              console.log(`[CALLBACK] Downloading track: ${createdTrack.name}`);
-              
-              const downloadResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'https://beatsfoundry.vercel.app'}/api/foundries/${foundryId}/tracks/download`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  trackId: createdTrack.id,
-                  audioUrl: audioUrl,
-                  title: title
-                }),
-              });
+            const trackToDownload = updatedTrack || createdTrack;
+            
+            if (trackToDownload) {
+              try {
+                console.log(`[CALLBACK] Downloading track: ${trackToDownload.name}`);
+                
+                const downloadResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'https://beatsfoundry.vercel.app'}/api/foundries/${foundryId}/tracks/download`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    trackId: trackToDownload.id,
+                    audioUrl: audioUrl,
+                    title: uniqueTitle
+                  }),
+                });
               
               if (!downloadResponse.ok) {
                 console.error(`[CALLBACK] Error downloading track:`, await downloadResponse.text());

@@ -284,12 +284,12 @@ export default function ListenPage() {
           // If the task is complete, stop polling and refresh tracks
           if (status === 'SUCCESS' || status === 'FIRST_SUCCESS') {
             console.log(`[UI] Music generation completed successfully!`);
-            
+              
             // Check if we have track data in the response
             const trackData = data.data?.response?.sunoData;
             if (trackData && trackData.length > 0) {
               console.log(`[UI] Found ${trackData.length} tracks in response:`, trackData);
-              
+                
               // Save these tracks to Airtable via our API
               try {
                 console.log(`[UI] Saving tracks from status response to Airtable`);
@@ -303,7 +303,7 @@ export default function ListenPage() {
                     tracks: trackData
                   }),
                 });
-                
+                  
                 if (!saveResponse.ok) {
                   console.error(`[UI] Error saving tracks from status:`, await saveResponse.text());
                 } else {
@@ -313,26 +313,33 @@ export default function ListenPage() {
                 console.error(`[UI] Error saving tracks from status:`, saveError);
               }
             }
-            
+              
             clearInterval(intervalId);
             setPollingInterval(null);
             setPollingTaskId(null);
-            
+              
             // Refresh the tracks list
             console.log(`[UI] Refreshing tracks list`);
             const tracksResponse = await fetch(`/api/foundries/${foundryId}/tracks`);
             const tracksData = await tracksResponse.json();
             console.log(`[UI] Received ${tracksData.length} tracks`);
             setTracks(tracksData);
-            
+              
             if (tracksData.length > 0) {
-              // Find the newest track (should be the one we just created)
+              // Find the newest tracks (should be the ones we just created)
               const sortedTracks = [...tracksData].sort((a, b) => 
                 new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
               );
+                
+              // Set the first track as current
               console.log(`[UI] Setting current track to newest track: "${sortedTracks[0].name}"`);
               setCurrentTrack(sortedTracks[0]);
               setIsPlaying(true); // Auto-play the new track
+                
+              // Show a message about multiple tracks
+              if (trackData && trackData.length > 1) {
+                setTrackCreated(true);
+              }
             }
           } else if (status === 'CREATE_TASK_FAILED' || status === 'GENERATE_AUDIO_FAILED' || 
                     status === 'CALLBACK_EXCEPTION' || status === 'SENSITIVE_WORD_ERROR') {
@@ -700,7 +707,9 @@ export default function ListenPage() {
             
             {trackCreated && (
               <div className="text-green-500 text-sm mt-1">
-                Track created successfully! It will appear in the music player soon.
+                {pollingTaskId && generationStatus === 'SUCCESS' && tracks.length > 1
+                  ? `Multiple tracks created successfully! Check the music player to listen to all versions.`
+                  : 'Track created successfully! It will appear in the music player soon.'}
               </div>
             )}
             
