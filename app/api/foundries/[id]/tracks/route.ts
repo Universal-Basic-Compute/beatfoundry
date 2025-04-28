@@ -176,14 +176,14 @@ export async function POST(request, { params }) {
         callbackUrl
       );
       console.log(`[TRACKS] SUNO API response:`, musicResponse);
+      console.log(`[TRACKS] Task ID from SUNO API:`, musicResponse?.data?.task_id);
     } catch (musicError) {
       console.error(`[TRACKS] Error generating music with SUNO API:`, musicError);
       // Continue without music generation in case of error
     }
     
     // Return the combined response
-    console.log(`[TRACKS] Returning response to client`);
-    return NextResponse.json({
+    const responseData = {
       ...messageResponse,
       music_task_id: musicResponse?.data?.task_id,
       music_parameters: {
@@ -192,7 +192,12 @@ export async function POST(request, { params }) {
         title: musicParams.title,
         lyrics: musicParams.lyrics
       }
-    });
+    };
+    
+    console.log(`[TRACKS] Returning response to client:`, responseData);
+    console.log(`[TRACKS] Response includes music_task_id:`, responseData.music_task_id);
+    
+    return NextResponse.json(responseData);
   } catch (error) {
     console.error(`[TRACKS] Error in POST /api/foundries/[id]/tracks:`, error);
     

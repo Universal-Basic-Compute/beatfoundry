@@ -133,9 +133,11 @@ export default function ListenPage() {
     const intervalId = setInterval(fetchTracks, 30000);
     
     return () => {
+      console.log(`[UI] Cleaning up intervals in useEffect`);
       clearInterval(intervalId);
       // Also clear the polling interval for task status if it exists
       if (pollingInterval) {
+        console.log(`[UI] Clearing polling interval in cleanup`);
         clearInterval(pollingInterval);
       }
     };
@@ -219,19 +221,23 @@ export default function ListenPage() {
   
   // Add polling function for music generation status
   const pollMusicGenerationStatus = async (taskId: string) => {
+    console.log(`[UI] pollMusicGenerationStatus called with taskId: ${taskId}`);
     console.log(`[UI] Starting to poll for task ID: ${taskId}`);
     setPollingTaskId(taskId);
     setGenerationStatus('PENDING');
     
     // Clear any existing interval
     if (pollingInterval) {
+      console.log(`[UI] Clearing existing polling interval`);
       clearInterval(pollingInterval);
     }
     
     // Set up polling every 10 seconds
+    console.log(`[UI] Setting up new polling interval for task ID: ${taskId}`);
     const intervalId = setInterval(async () => {
       try {
-        console.log(`[UI] Polling for task status: ${taskId}`);
+        console.log(`[UI] Polling interval fired for task status: ${taskId}`);
+        console.log(`[UI] Sending request to: /api/foundries/${foundryId}/tracks/status?taskId=${taskId}`);
         const response = await fetch(`/api/foundries/${foundryId}/tracks/status?taskId=${taskId}`);
         
         if (!response.ok) {
@@ -320,6 +326,8 @@ export default function ListenPage() {
       
       const data = await response.json();
       console.log(`[UI] Track creation successful:`, data);
+      console.log(`[UI] Response data:`, data);
+      console.log(`[UI] music_task_id:`, data.music_task_id);
       
       setTrackCreated(true);
       setNewMessage('');
@@ -328,6 +336,8 @@ export default function ListenPage() {
       if (data.music_task_id) {
         console.log(`[UI] Starting to poll for task ID: ${data.music_task_id}`);
         pollMusicGenerationStatus(data.music_task_id);
+      } else {
+        console.warn(`[UI] No music_task_id found in response, polling will not start`);
       }
     } catch (err) {
       console.error('[UI] Error creating track:', err);

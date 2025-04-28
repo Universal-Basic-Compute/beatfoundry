@@ -6,6 +6,8 @@ export async function GET(request: NextRequest, { params }: any) {
   const taskId = url.searchParams.get('taskId');
   
   console.log(`[STATUS] Checking music generation status for foundry ID: ${foundryId}, task ID: ${taskId}`);
+  console.log(`[STATUS] Request URL: ${request.url}`);
+  console.log(`[STATUS] SUNO_API_KEY exists: ${!!process.env.SUNO_API_KEY}`);
   
   if (!taskId) {
     console.log(`[STATUS] Error: taskId is required`);
@@ -27,6 +29,8 @@ export async function GET(request: NextRequest, { params }: any) {
         'Authorization': `Bearer ${process.env.SUNO_API_KEY}`,
       },
     });
+    
+    console.log(`[STATUS] Status response status code: ${response.status}`);
     
     if (!response.ok) {
       console.error(`[STATUS] Error response from SUNO API: ${response.status}`);
