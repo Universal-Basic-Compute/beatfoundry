@@ -96,76 +96,70 @@ export async function POST(request, { params }) {
   console.log(`[TRACKS] Instrumental mode: ${instrumental}`);
   
   try {
-    // Add instructions to respond with a song concept first, then JSON for generation
+    // Instructions to directly generate music without concept approval
     const trackInstructions = instrumental
-      ? "First, respond with a detailed song concept that includes: 1) A creative title, 2) The musical genre/style, 3) The mood and emotional journey, 4) Key musical elements and instrumentation, and 5) A brief description of how the track will develop. After I approve the concept, respond with a JSON object containing: 'prompt', 'style', and 'title' fields formatted as valid JSON without additional text. This will be an instrumental track without lyrics."
-      : "First, respond with a detailed song concept that includes: 1) A creative title, 2) The musical genre/style, 3) The mood and emotional journey, 4) Key musical elements and instrumentation, 5) A brief description of how the track will develop, and 6) Sample lyrics or lyrical themes. After I approve the concept, respond with a JSON object containing: 'prompt', 'style', 'title', and 'lyrics' fields formatted as valid JSON without additional text.";
-    
-    // Check if this is a concept approval message
-    const isConceptApproval = body.content.toLowerCase().includes('approve') || 
-                             body.content.toLowerCase().includes('generate') ||
-                             body.content.toLowerCase().includes('create') ||
-                             body.content.toLowerCase().includes('yes');
+      ? "Respond only with a JSON object containing: 1) 'prompt': a brief list of keywords for style, sonorities, and emotions (no more than 10-15 words total), 2) 'style': a specific music genre or style (e.g., 'Jazz', 'Classical', 'Electronic'), 3) 'title': a creative title for the track, and 4) 'presentation': a brief artistic explanation of the concept behind this track (2-3 sentences). Format your response as valid JSON without any additional text. This will be an instrumental track without lyrics."
+      : "Respond only with a JSON object containing: 1) 'prompt': a brief list of keywords for style, sonorities, and emotions (no more than 10-15 words total), 2) 'style': a specific music genre or style (e.g., 'Jazz', 'Classical', 'Electronic'), 3) 'title': a creative title for the track, 4) 'presentation': a brief artistic explanation of the concept behind this track (2-3 sentences), and 5) 'lyrics': complete lyrics for the track. Format your response as valid JSON without any additional text.";
     
     console.log(`[TRACKS] Sending message to 'tracks' channel with instructions`);
-    console.log(`[TRACKS] Is concept approval: ${isConceptApproval}`);
-    
-    // If this is a concept approval, use different instructions
+  
     const messageResponse = await sendChannelMessage(
       foundryId,
       'tracks', // Channel ID for tracks
       body.content,
       {
         mode: 'creative',
-        addSystem: isConceptApproval 
-          ? "The user has approved the concept. Respond only with a JSON object containing the required fields for music generation. Format your response as valid JSON without any additional text."
-          : trackInstructions,
+        addSystem: trackInstructions,
         historyLength: 10,
       }
     );
     
     console.log(`[TRACKS] Received response from channel:`, messageResponse);
     
-    // Check if the response is a concept (not JSON) or parameters (JSON)
+    // Parse the response as JSON parameters
     let musicParams;
-    let isConcept = true;
     
     try {
-      console.log(`[TRACKS] Checking if response is JSON or concept:`, messageResponse.content);
+      console.log(`[TRACKS] Parsing music parameters from response content:`, messageResponse.content);
       
-      // Try to parse as JSON
+      // The content might be a string or an object
       if (typeof messageResponse.content === 'string') {
-        try {
-          musicParams = JSON.parse(messageResponse.content);
-          isConcept = false;
-        } catch (e) {
-          // Not JSON, so it's a concept
-          isConcept = true;
-        }
-      } else if (typeof messageResponse.content === 'object') {
+        musicParams = JSON.parse(messageResponse.content);
+      } else {
         musicParams = messageResponse.content;
-        isConcept = false;
-      }
-      
-      // If it's a concept, return it to the user for approval
-      if (isConcept) {
-        console.log(`[TRACKS] Returning song concept to user for approval`);
-        return NextResponse.json({
-          content: messageResponse.content,
-          is_concept: true,
-          message_id: messageResponse.id || `concept-${Date.now()}`,
-          timestamp: new Date().toISOString(),
-          status: "concept_ready"
-        });
       }
       
       console.log(`[TRACKS] Parsed music parameters:`, musicParams);
       
-      // Validate the required fields for JSON parameters
-      if (!musicParams.prompt || !musicParams.style || !musicParams.title || 
-          (!instrumental && !musicParams.lyrics)) {
+      // Validate the required fields
+      if (!musicParams.prompt || !musicParams.style || !musicParams.title) {
         console.log(`[TRACKS] Error: Missing required music parameters`);
         throw new Error('Missing required music parameters');
+      }
+      
+      // If we have a presentation, add it as a message
+      if (musicParams.presentation) {
+        try {
+          console.log(`[TRACKS] Adding presentation as a message: "${musicParams.presentation}"`);
+          
+          // Format the presentation message
+          const presentationMessage = `**Song Concept: ${musicParams.title}**\n\n${musicParams.presentation}\n\n*Style: ${musicParams.style}*`;
+          
+          // Add the presentation as a message from the assistant
+          await sendChannelMessage(
+            foundryId,
+            'general', // Use the general channel for the presentation
+            presentationMessage,
+            {
+              mode: 'creative',
+            }
+          );
+          
+          console.log(`[TRACKS] Successfully added presentation as a message`);
+        } catch (messageError) {
+          console.error(`[TRACKS] Error adding presentation as a message:`, messageError);
+          // Continue anyway, don't fail the request
+        }
       }
     } catch (parseError) {
       console.error(`[TRACKS] Error parsing music parameters:`, parseError);

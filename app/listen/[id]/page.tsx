@@ -473,9 +473,7 @@ export default function ListenPage() {
     intervalsRef.current[taskId] = intervalId;
   };
 
-  // Add state for concept flow
-  const [conceptMode, setConceptMode] = useState(false);
-  const [conceptContent, setConceptContent] = useState<string | null>(null);
+  // State for track generation (concept mode removed)
   
   const handleCreateTrack = async () => {
     if (!newMessage.trim()) return;
@@ -513,26 +511,7 @@ export default function ListenPage() {
       const data = await response.json();
       console.log(`[UI] Track creation response:`, data);
       
-      // Check if this is a concept response
-      if (data.is_concept) {
-        console.log(`[UI] Received song concept:`, data.content);
-        setConceptMode(true);
-        setConceptContent(data.content);
-        
-        // Add the concept to the messages list
-        setMessages(prev => [...prev, {
-          id: data.message_id || `concept-${Date.now()}`,
-          role: 'assistant',
-          content: data.content,
-          timestamp: data.timestamp || new Date().toISOString(),
-        }]);
-        
-        return;
-      }
-      
-      // If we're here, it's a music generation response
-      setConceptMode(false);
-      setConceptContent(null);
+      // Music generation response handling
       
       console.log(`[UI] Music generation initiated:`, data);
       console.log(`[UI] music_task_id:`, data.music_task_id);
@@ -984,24 +963,14 @@ export default function ListenPage() {
             )}
           </div>
           
-          <form onSubmit={conceptMode ? handleCreateTrack : handleSendMessage} className="flex flex-col">
-            {conceptMode && (
-              <div className="bg-purple-100 dark:bg-purple-900/30 p-3 rounded-lg mb-3 text-sm">
-                <p className="font-medium text-purple-800 dark:text-purple-200 mb-1">
-                  Song Concept Ready
-                </p>
-                <p className="text-purple-700 dark:text-purple-300">
-                  Review the concept above and approve it or suggest changes. Type "approve" or "generate" to create the track, or provide feedback to refine the concept.
-                </p>
-              </div>
-            )}
+          <form onSubmit={handleSendMessage} className="flex flex-col">
             
             <div className="flex mb-2">
               <input
                 type="text"
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
-                placeholder={conceptMode ? "Type 'approve' or suggest changes..." : "Type your message..."}
+                placeholder="Type your message..."
                 className="flex-1 p-3 border rounded-l-lg dark:bg-gray-800 dark:border-gray-700"
                 disabled={sending}
               />
@@ -1010,18 +979,16 @@ export default function ListenPage() {
                 className="bg-foreground text-background px-4 py-2 rounded-none font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
                 disabled={sending || !newMessage.trim()}
               >
-                {sending ? 'Sending...' : conceptMode ? 'Submit' : 'Send'}
+                {sending ? 'Sending...' : 'Send'}
               </button>
-              {!conceptMode && (
-                <button
-                  type="button"
-                  onClick={handleCreateTrack}
-                  className="bg-purple-600 text-white px-4 py-2 rounded-r-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
-                  disabled={sending || !newMessage.trim()}
-                >
-                  {pendingGenerations.length > 0 ? 'Creating...' : 'Create Track'}
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={handleCreateTrack}
+                className="bg-purple-600 text-white px-4 py-2 rounded-r-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                disabled={sending || !newMessage.trim()}
+              >
+                {pendingGenerations.length > 0 ? 'Creating...' : 'Create Track'}
+              </button>
             </div>
             
             {/* Status indicators moved to the music player area */}
