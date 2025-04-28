@@ -59,7 +59,9 @@ export default function ListenPage() {
   const [thoughts, setThoughts] = useState<Array<{
     step: string;
     content: any;
+    timestamp?: string;
   }>>([]);
+  const [eventSource, setEventSource] = useState<EventSource | null>(null);
   
   // Add state for tracks
   const [tracks, setTracks] = useState<Track[]>([]);
@@ -307,7 +309,7 @@ export default function ListenPage() {
     if (thinking) return;
     
     setThinking(true);
-    setThoughts([]);
+    // Don't clear thoughts here, as we want to keep displaying them while new ones arrive
     
     try {
       console.log(`[UI] Triggering autonomous thinking for foundry ID: ${foundryId}`);
@@ -326,34 +328,42 @@ export default function ListenPage() {
       }
       
       const data = await response.json();
-      console.log(`[UI] Autonomous thinking response:`, data);
+      console.log(`[UI] Autonomous thinking initiated:`, data);
       
-      if (data.steps && Array.isArray(data.steps)) {
-        setThoughts(data.steps);
-        
-        // Add the final thought as a message from the assistant
-        const kinResponse = data.steps.find(step => step.step === "kin_response");
-        if (kinResponse && kinResponse.content) {
-          // Refresh messages to show the new thought
-          const messagesResponse = await fetch(`/api/foundries/${foundryId}/messages`);
-          if (messagesResponse.ok) {
-            const messagesData = await messagesResponse.json();
-            setMessages(messagesData.messages || []);
-          }
+      // We don't need to set thoughts here as they will come in via SSE
+      // Instead, we'll refresh messages after a delay to show any new messages
+      setTimeout(async () => {
+        // Refresh messages to show any new thoughts that became messages
+        const messagesResponse = await fetch(`/api/foundries/${foundryId}/messages`);
+        if (messagesResponse.ok) {
+          const messagesData = await messagesResponse.json();
+          setMessages(messagesData.messages || []);
         }
-      }
+        
+        // Set thinking to false after a reasonable delay
+        setThinking(false);
+        
+        // If autonomous mode is still on, trigger thinking again after a delay
+        if (autonomousMode) {
+          setTimeout(() => {
+            if (autonomousMode) {
+              triggerThinking();
+            }
+          }, 10000); // Wait 10 seconds before triggering again
+        }
+      }, 15000); // Wait 15 seconds for thinking to complete
+      
     } catch (error) {
       console.error('[UI] Error triggering autonomous thinking:', error);
-    } finally {
       setThinking(false);
       
-      // If autonomous mode is still on, trigger thinking again after a delay
+      // If autonomous mode is still on, try again after a delay
       if (autonomousMode) {
         setTimeout(() => {
           if (autonomousMode) {
             triggerThinking();
           }
-        }, 5000); // Wait 5 seconds before triggering again
+        }, 5000); // Wait 5 seconds before trying again
       }
     }
   };
@@ -361,13 +371,94 @@ export default function ListenPage() {
   // Add effect to start/stop autonomous thinking when the toggle changes
   useEffect(() => {
     if (autonomousMode) {
+      // Connect to SSE endpoint for real-time thinking updates
+      connectToThinkingEvents();
       triggerThinking();
+    } else {
+      // Disconnect from SSE when autonomous mode is turned off
+      if (eventSource) {
+        console.log('[UI] Closing SSE connection');
+        eventSource.close();
+        setEventSource(null);
+      }
     }
     
     return () => {
-      // Clean up if needed
+      // Clean up SSE connection when component unmounts
+      if (eventSource) {
+        console.log('[UI] Closing SSE connection on cleanup');
+        eventSource.close();
+      }
     };
   }, [autonomousMode]);
+  
+  // Function to connect to the SSE endpoint
+  const connectToThinkingEvents = () => {
+    if (eventSource) {
+      // Close existing connection
+      eventSource.close();
+    }
+    
+    console.log(`[UI] Connecting to thinking events for foundry ID: ${foundryId}`);
+    const newEventSource = new EventSource(`/api/foundries/${foundryId}/thinking/events`);
+    
+    newEventSource.onopen = () => {
+      console.log('[UI] SSE connection opened');
+    };
+    
+    newEventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        console.log('[UI] Received thinking event:', data);
+        
+        // If this is just a connection message, ignore it
+        if (data.type === 'connection') {
+          console.log('[UI] Connected to thinking events');
+          return;
+        }
+        
+        // Add the new thinking step to our state
+        if (data.step) {
+          setThoughts(prev => {
+            // Check if we already have this step
+            const existingIndex = prev.findIndex(t => t.step === data.step);
+            
+            if (existingIndex >= 0) {
+              // Replace the existing step
+              const newThoughts = [...prev];
+              newThoughts[existingIndex] = {
+                step: data.step,
+                content: data.content,
+                timestamp: data.timestamp
+              };
+              return newThoughts;
+            } else {
+              // Add the new step
+              return [...prev, {
+                step: data.step,
+                content: data.content,
+                timestamp: data.timestamp
+              }];
+            }
+          });
+        }
+      } catch (error) {
+        console.error('[UI] Error parsing SSE event:', error);
+      }
+    };
+    
+    newEventSource.onerror = (error) => {
+      console.error('[UI] SSE connection error:', error);
+      // Try to reconnect after a delay
+      setTimeout(() => {
+        if (autonomousMode) {
+          connectToThinkingEvents();
+        }
+      }, 5000);
+    };
+    
+    setEventSource(newEventSource);
+  };
   
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -1181,6 +1272,29 @@ export default function ListenPage() {
                       <span className="animate-bounce" style={{ animationDelay: '0.2s' }}>.</span>
                       <span className="animate-bounce" style={{ animationDelay: '0.4s' }}>.</span>
                     </div>
+                    
+                    {/* Show the most recent thoughts as they arrive */}
+                    {thoughts.length > 0 && (
+                      <div className="mt-2 text-xs text-gray-600 dark:text-gray-400">
+                        <div className="font-medium">Latest thought:</div>
+                        <div className="bg-gray-100 dark:bg-gray-800 p-2 rounded mt-1">
+                          {thoughts[thoughts.length - 1].step === 'keywords' ? (
+                            <div>
+                              {thoughts[thoughts.length - 1].content.relevant_keywords && (
+                                <div><span className="font-medium">Keywords:</span> {thoughts[thoughts.length - 1].content.relevant_keywords.join(', ')}</div>
+                              )}
+                              {thoughts[thoughts.length - 1].content.emotions && (
+                                <div><span className="font-medium">Emotions:</span> {thoughts[thoughts.length - 1].content.emotions.join(', ')}</div>
+                              )}
+                            </div>
+                          ) : (
+                            <div>{typeof thoughts[thoughts.length - 1].content === 'string' 
+                              ? thoughts[thoughts.length - 1].content 
+                              : JSON.stringify(thoughts[thoughts.length - 1].content)}</div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
                 <div ref={messagesEndRef} />

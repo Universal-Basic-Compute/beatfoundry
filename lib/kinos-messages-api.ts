@@ -130,7 +130,7 @@ export async function triggerAutonomousThinking(
   console.log(`Triggering autonomous thinking: ${url}`);
   
   const requestBody: any = {
-    sync: true, // Default to sync mode for our implementation
+    sync: false, // Default to async mode for real-time updates via webhook
   };
   
   if (options?.iterations) requestBody.iterations = options.iterations;

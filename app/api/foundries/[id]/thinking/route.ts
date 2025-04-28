@@ -25,7 +25,7 @@ export async function POST(request, { params }) {
     
     const thinkingResponse = await triggerAutonomousThinking(foundryId, {
       iterations: body.iterations || 1,
-      sync: true, // Always use sync mode for direct response
+      sync: false, // Use async mode for real-time updates via webhook
       webhookUrl: webhookUrl
     });
     
