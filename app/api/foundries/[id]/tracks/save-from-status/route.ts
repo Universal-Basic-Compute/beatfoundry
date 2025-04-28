@@ -32,7 +32,8 @@ export async function POST(request: NextRequest, { params }: any) {
         const audioUrl = track.audioUrl || track.audio_url || track.sourceAudioUrl || '';
         const title = track.title || 'Untitled Track';
         const prompt = track.prompt || '';
-    
+        const lyrics = track.lyrics || prompt; // Make sure we extract lyrics properly
+
         if (!audioUrl) {
           console.error(`[SAVE-STATUS] No audio URL found in track data`);
           continue;
@@ -98,15 +99,22 @@ export async function POST(request: NextRequest, { params }: any) {
     
         // If no existing track found or this is not the first track, create a new one
         console.log(`[SAVE-STATUS] Creating new track in Airtable: ${uniqueTitle}`);
+    
+        // Prevent duplicate processing of the same track
+        if (savedTracks.some(saved => saved.url === audioUrl)) {
+          console.log(`[SAVE-STATUS] Skipping duplicate track with URL: ${audioUrl}`);
+          continue;
+        }
+    
         const createdTrack = await createTrack(
           foundryId,
           uniqueTitle,
-          prompt,
-          prompt, // Use prompt as lyrics if no lyrics provided
+          prompt, // Use the track's prompt
+          lyrics, // Use the track's lyrics or prompt as fallback
           audioUrl,
           tracks.indexOf(track) === 0 ? taskId : null // Only save taskId for the first track
         );
-            
+        
         console.log(`[SAVE-STATUS] Successfully created new track: ${createdTrack.id}`);
         savedTracks.push(createdTrack);
             
