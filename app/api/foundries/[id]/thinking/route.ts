@@ -22,6 +22,7 @@ export async function POST(request, { params }) {
     }
     
     console.log(`[THINKING] Webhook URL: ${webhookUrl}`);
+    console.log(`[THINKING] Webhook URL configured: ${webhookUrl}`);
     
     const thinkingResponse = await triggerAutonomousThinking(foundryId, {
       iterations: body.iterations || 1,

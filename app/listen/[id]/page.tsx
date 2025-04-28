@@ -372,10 +372,12 @@ export default function ListenPage() {
   // Add effect to start/stop autonomous thinking when the toggle changes
   useEffect(() => {
     if (autonomousMode) {
+      console.log('[UI] Autonomous mode enabled, connecting to thinking events');
       // Connect to SSE endpoint for real-time thinking updates
       connectToThinkingEvents();
       triggerThinking();
     } else {
+      console.log('[UI] Autonomous mode disabled, disconnecting from thinking events');
       // Disconnect from SSE when autonomous mode is turned off
       if (eventSource) {
         console.log('[UI] Closing SSE connection');
@@ -1431,9 +1433,9 @@ export default function ListenPage() {
                       </div>
                       
                       {/* Display thoughts below the assistant's message */}
-                      {message.role === 'assistant' && messageThoughts.length > 0 && (
+                      {message.role === 'assistant' && thoughts.length > 0 && index === messages.length - 1 && (
                         <div className="ml-4 mr-12 mt-1 mb-3 text-xs text-gray-500 dark:text-gray-400 space-y-1">
-                          {messageThoughts.map((thought, i) => {
+                          {thoughts.map((thought, i) => {
                             // Skip the kin_response step as it's already shown in the message
                             if (thought.step === 'kin_response') return null;
                             
@@ -1456,7 +1458,9 @@ export default function ListenPage() {
                                     )}
                                   </div>
                                 ) : (
-                                  <div>{thought.content}</div>
+                                  <div>{typeof thought.content === 'string' 
+                                    ? thought.content 
+                                    : JSON.stringify(thought.content)}</div>
                                 )}
                               </div>
                             );

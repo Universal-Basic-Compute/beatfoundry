@@ -10,16 +10,18 @@ export async function POST(request: NextRequest, { params }: any) {
     console.log(`[WEBHOOK] Webhook body:`, JSON.stringify(body, null, 2));
     
     // Extract the thinking step data
-    const step = body.step;
+    const step = body.step || body.type;
     const content = body.content;
     
     if (!step) {
-      console.error(`[WEBHOOK] Invalid webhook data: missing step`);
+      console.error(`[WEBHOOK] Invalid webhook data: missing step or type`);
       return NextResponse.json(
-        { error: 'Invalid webhook data: missing step' },
+        { error: 'Invalid webhook data: missing step or type' },
         { status: 400 }
       );
     }
+    
+    console.log(`[WEBHOOK] Received webhook for foundry ${foundryId} with data:`, JSON.stringify(body, null, 2));
     
     // Emit an event with the foundry ID as the channel and the thinking step data
     const eventData = {
