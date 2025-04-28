@@ -431,7 +431,7 @@ export default function ListenPage() {
   };
 
   // Add a function to create a track from thinking results
-  const createTrackFromThinking = async (prompt) => {
+  const createTrackFromThinking = async (prompt: string) => {
     if (!prompt) return;
     
     console.log(`[UI] Creating track from autonomous thinking with prompt:`, prompt);
