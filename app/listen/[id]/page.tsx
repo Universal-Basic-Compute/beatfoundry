@@ -434,7 +434,10 @@ export default function ListenPage() {
 
   // Add a function to create a track from thinking results
   const createTrackFromThinking = async (prompt: string) => {
-    if (!prompt) return;
+    if (!prompt) {
+      console.error('[UI] Cannot create track: prompt is empty');
+      return;
+    }
     
     console.log(`[UI] Creating track from autonomous thinking with prompt:`, prompt);
     
@@ -452,12 +455,15 @@ export default function ListenPage() {
       createdAt: new Date().toISOString()
     }]);
     
+    console.log(`[UI] Added temporary generation with ID: ${tempId}`);
+    
     // Reset button text after a short delay (1.5 seconds)
     setTimeout(() => {
       setCreateButtonText('Create Track');
     }, 1500);
     
     try {
+      console.log(`[UI] Sending POST request to create track from thinking`);
       const trackResponse = await fetch(`/api/foundries/${foundryId}/tracks`, {
         method: 'POST',
         headers: {
@@ -470,13 +476,16 @@ export default function ListenPage() {
         }),
       });
       
+      console.log(`[UI] Track creation response status: ${trackResponse.status}`);
+      
       if (!trackResponse.ok) {
-        console.error(`[UI] Error creating track from thinking:`, await trackResponse.text());
+        const errorText = await trackResponse.text();
+        console.error(`[UI] Error creating track from thinking:`, errorText);
         
         // Remove the temporary loading generation
         setPendingGenerations(prev => prev.filter(gen => gen.id !== tempId));
         
-        throw new Error('Failed to create track from thinking');
+        throw new Error(`Failed to create track from thinking: ${trackResponse.status}`);
       }
       
       const trackData = await trackResponse.json();
@@ -557,48 +566,65 @@ export default function ListenPage() {
         
         // Add the new thinking step to our state
         if (data.step) {
+          console.log('[UI] Processing thinking step:', data.step);
+          
           setThoughts(prev => {
             // Check if we already have this step
             const existingIndex = prev.findIndex(t => t.step === data.step);
             
+            let newThoughts;
             if (existingIndex >= 0) {
               // Replace the existing step
-              const newThoughts = [...prev];
+              newThoughts = [...prev];
               newThoughts[existingIndex] = {
                 step: data.step,
                 content: data.content,
                 timestamp: data.timestamp
               };
-              return newThoughts;
             } else {
               // Add the new step
-              const newThoughts = [...prev, {
+              newThoughts = [...prev, {
                 step: data.step,
                 content: data.content,
                 timestamp: data.timestamp
               }];
-              
-              // Check if we have all the required thinking steps
-              const hasKeywords = newThoughts.some(t => t.step === 'keywords');
-              const hasDream = newThoughts.some(t => t.step === 'dream');
-              const hasDaydreaming = newThoughts.some(t => t.step === 'daydreaming');
-              const hasInitiative = newThoughts.some(t => t.step === 'initiative');
-              
-              // If we have all the required steps, create a track
-              if (hasKeywords && hasDream && hasDaydreaming && hasInitiative) {
-                console.log('[UI] All thinking steps complete, creating track');
-                
-                // Wait a moment to ensure all data is processed
-                setTimeout(() => {
-                  const prompt = compileThinkingResults();
-                  if (prompt) {
-                    createTrackFromThinking(prompt);
-                  }
-                }, 1000);
-              }
-              
-              return newThoughts;
             }
+            
+            // Check if we have all the required thinking steps
+            const hasKeywords = newThoughts.some(t => t.step === 'keywords');
+            const hasDream = newThoughts.some(t => t.step === 'dream');
+            const hasDaydreaming = newThoughts.some(t => t.step === 'daydreaming');
+            const hasInitiative = newThoughts.some(t => t.step === 'initiative');
+            
+            console.log('[UI] Checking thinking steps completion:');
+            console.log('[UI] - Keywords:', hasKeywords);
+            console.log('[UI] - Dream:', hasDream);
+            console.log('[UI] - Daydreaming:', hasDaydreaming);
+            console.log('[UI] - Initiative:', hasInitiative);
+            
+            // If we have at least 2 thinking steps, create a track
+            // This is more lenient than requiring all 4 steps
+            const requiredStepsCount = [hasKeywords, hasDream, hasDaydreaming, hasInitiative]
+              .filter(Boolean).length;
+            
+            if (requiredStepsCount >= 2) {
+              console.log('[UI] At least 2 thinking steps complete, creating track');
+              
+              // Wait a moment to ensure all data is processed
+              setTimeout(() => {
+                const prompt = compileThinkingResults();
+                if (prompt) {
+                  console.log('[UI] Compiled thinking results into prompt, creating track');
+                  createTrackFromThinking(prompt);
+                } else {
+                  console.error('[UI] Failed to compile thinking results into prompt');
+                }
+              }, 1000);
+            } else {
+              console.log(`[UI] Waiting for more thinking steps (${requiredStepsCount}/4 complete)`);
+            }
+            
+            return newThoughts;
           });
         }
       } catch (error) {
