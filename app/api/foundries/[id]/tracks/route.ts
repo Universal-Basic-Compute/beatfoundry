@@ -6,9 +6,9 @@ import { getTracksByFoundryId, createTrack } from '@/lib/airtable';
 // Add a GET method to fetch tracks
 export async function GET(
   request: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: { id: string } }
 ) {
-  const foundryId = context.params.id;
+  const foundryId = params.id;
   
   try {
     const tracks = await getTracksByFoundryId(foundryId);
@@ -49,9 +49,9 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: { id: string } }
 ) {
-  const foundryId = context.params.id;
+  const foundryId = params.id;
   console.log(`[TRACKS] Starting track creation for foundry ID: ${foundryId}`);
   
   const body = await request.json();
