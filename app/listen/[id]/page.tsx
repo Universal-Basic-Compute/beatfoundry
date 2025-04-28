@@ -52,6 +52,7 @@ export default function ListenPage() {
   const [showOptions, setShowOptions] = useState(false);
   const [instrumental, setInstrumental] = useState(false);
   const [trackMenuOpen, setTrackMenuOpen] = useState<string | null>(null);
+  const [expandedTracks, setExpandedTracks] = useState<Set<string>>(new Set());
   
   // Add state for autonomous thinking
   const [autonomousMode, setAutonomousMode] = useState(false);
@@ -954,6 +955,18 @@ export default function ListenPage() {
     }
   };
   
+  const toggleTrackExpansion = (trackId: string) => {
+    setExpandedTracks(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(trackId)) {
+        newSet.delete(trackId);
+      } else {
+        newSet.add(trackId);
+      }
+      return newSet;
+    });
+  };
+  
   const togglePlayPause = () => {
     if (audioRef.current) {
       if (isPlaying) {
@@ -1181,42 +1194,91 @@ export default function ListenPage() {
                             </div>
                           </div>
                           
-                          {/* Track options menu */}
-                          <div className="relative">
+                          {/* Add expand/collapse button and track options menu */}
+                          <div className="flex items-center space-x-2">
                             <button 
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setTrackMenuOpen(trackMenuOpen === track.id ? null : track.id);
+                                toggleTrackExpansion(track.id);
                               }}
                               className="p-1 rounded-full hover:bg-black/10 dark:hover:bg-white/10"
-                              aria-label="Track options"
+                              aria-label={expandedTracks.has(track.id) ? "Collapse track details" : "Expand track details"}
                             >
-                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <circle cx="12" cy="12" r="1"></circle>
-                                <circle cx="12" cy="5" r="1"></circle>
-                                <circle cx="12" cy="19" r="1"></circle>
+                              <svg 
+                                xmlns="http://www.w3.org/2000/svg" 
+                                width="16" 
+                                height="16" 
+                                viewBox="0 0 24 24" 
+                                fill="none" 
+                                stroke="currentColor" 
+                                strokeWidth="2" 
+                                strokeLinecap="round" 
+                                strokeLinejoin="round"
+                                className={`transition-transform ${expandedTracks.has(track.id) ? 'rotate-180' : ''}`}
+                              >
+                                <polyline points="6 9 12 15 18 9"></polyline>
                               </svg>
                             </button>
                             
-                            {trackMenuOpen === track.id && (
-                              <div className="absolute right-0 mt-1 w-36 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 z-10 track-menu">
-                                <div className="py-1" role="menu" aria-orientation="vertical">
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleDownloadTrack(track);
-                                      setTrackMenuOpen(null);
-                                    }}
-                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
-                                    role="menuitem"
-                                  >
-                                    Download
-                                  </button>
+                            {/* Track options menu */}
+                            <div className="relative">
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setTrackMenuOpen(trackMenuOpen === track.id ? null : track.id);
+                                }}
+                                className="p-1 rounded-full hover:bg-black/10 dark:hover:bg-white/10"
+                                aria-label="Track options"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <circle cx="12" cy="12" r="1"></circle>
+                                  <circle cx="12" cy="5" r="1"></circle>
+                                  <circle cx="12" cy="19" r="1"></circle>
+                                </svg>
+                              </button>
+                              
+                              {trackMenuOpen === track.id && (
+                                <div className="absolute right-0 mt-1 w-36 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 z-10 track-menu">
+                                  <div className="py-1" role="menu" aria-orientation="vertical">
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDownloadTrack(track);
+                                        setTrackMenuOpen(null);
+                                      }}
+                                      className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                      role="menuitem"
+                                    >
+                                      Download
+                                    </button>
+                                  </div>
                                 </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Expanded track details */}
+                        {expandedTracks.has(track.id) && (
+                          <div 
+                            className="mt-3 text-sm bg-black/5 dark:bg-white/5 p-3 rounded-lg"
+                            onClick={(e) => e.stopPropagation()} // Prevent clicking here from playing the track
+                          >
+                            {track.prompt && (
+                              <div className="mb-3">
+                                <h4 className="font-medium mb-1">Prompt</h4>
+                                <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{track.prompt}</p>
+                              </div>
+                            )}
+                            
+                            {track.lyrics && track.lyrics !== track.prompt && (
+                              <div>
+                                <h4 className="font-medium mb-1">Lyrics</h4>
+                                <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{track.lyrics}</p>
                               </div>
                             )}
                           </div>
-                        </div>
+                        )}
                       </div>
                     ))}
                   </div>
