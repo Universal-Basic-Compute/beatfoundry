@@ -26,7 +26,7 @@ export async function POST(request, { params }) {
     
     const thinkingResponse = await triggerAutonomousThinking(foundryId, {
       iterations: body.iterations || 1,
-      sync: true, // Use sync mode to get immediate response
+      sync: body.sync !== undefined ? body.sync : false, // Default to async mode
       webhookUrl: webhookUrl
     });
     
@@ -39,34 +39,9 @@ export async function POST(request, { params }) {
     // For development, return mock data if the API call fails
     if (process.env.NODE_ENV !== 'production') {
       return NextResponse.json({
-        status: "completed",
-        blueprint: "beatfoundry",
-        kin_id: foundryId,
-        steps: [
-          {
-            step: "keywords",
-            content: {
-              relevant_keywords: ["music", "creativity", "composition"],
-              emotions: ["inspiration", "curiosity"],
-              problems: ["creative block", "technical limitations"],
-              surprising_words: ["fusion", "emergent", "transcendent"],
-              adjacent_keywords: ["technology", "emotion"],
-              surprising_keywords: ["biomusicology", "sonic architecture"]
-            }
-          },
-          {
-            step: "dream",
-            content: "In my dream, I found myself in a vast cathedral of sound where musical notes took physical form, swirling around me like luminous particles. Each composition created unique architectural structures that responded to emotional resonance."
-          },
-          {
-            step: "daydreaming",
-            content: "I wonder if music could be composed not just for listening, but as interactive environments that respond to the listener's emotional state. What if compositions could evolve over time, learning from how people respond to them? Perhaps the future of music lies in creating not just songs, but living sonic ecosystems."
-          },
-          {
-            step: "initiative",
-            content: "Goal: Develop an adaptive composition system\n\nSteps:\n1. Research emotional response patterns to different musical elements\n2. Create a prototype that modifies musical parameters based on listener feedback\n3. Explore ways to incorporate environmental sounds into compositions\n4. Design a visual representation system for musical structures"
-          }
-        ]
+        status: "initiated",
+        message: "Autonomous thinking initiated",
+        kin_id: foundryId
       });
     }
     

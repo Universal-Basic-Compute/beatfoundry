@@ -319,7 +319,8 @@ export default function ListenPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          iterations: 1
+          iterations: 1,
+          sync: false // Change to false to use async mode with webhooks
         }),
       });
       
@@ -330,43 +331,13 @@ export default function ListenPage() {
       const data = await response.json();
       console.log(`[UI] Autonomous thinking response:`, data);
       
-      // Check if we have steps in the response (sync mode)
-      if (data.steps && Array.isArray(data.steps)) {
-        // Update thoughts state with all steps
-        setThoughts(data.steps.map(step => ({
-          step: step.step,
-          content: step.content,
-          timestamp: new Date().toISOString()
-        })));
-        
-        // Find the initiative step
-        const initiativeStep = data.steps.find(step => step.step === 'initiative');
-        
-        if (initiativeStep && initiativeStep.content) {
-          console.log('[UI] Found initiative step, creating track');
-          
-          // Create a prompt from just the initiative
-          const prompt = `Create a track based on this initiative:\n\n${
-            typeof initiativeStep.content === 'string' 
-              ? initiativeStep.content 
-              : JSON.stringify(initiativeStep.content)
-          }`;
-          
-          console.log('[UI] Creating track with prompt:', prompt);
-          createTrackFromThinking(prompt);
-        } else {
-          console.log('[UI] No initiative step found in response');
-        }
+      // We don't need to process steps here anymore since we'll get them via SSE
+      // Just set up the connection to the thinking events if not already connected
+      if (!eventSource) {
+        connectToThinkingEvents();
       }
       
-      // Refresh messages to show any new thoughts that became messages
-      const messagesResponse = await fetch(`/api/foundries/${foundryId}/messages`);
-      if (messagesResponse.ok) {
-        const messagesData = await messagesResponse.json();
-        setMessages(messagesData.messages || []);
-      }
-      
-      // Set thinking to false after processing
+      // Set thinking to false after a delay
       setTimeout(() => {
         setThinking(false);
         
@@ -610,26 +581,23 @@ export default function ListenPage() {
               }];
             }
             
-            // Check if we have the initiative step
-            const hasInitiative = newThoughts.some(t => t.step === 'initiative');
-            
-            console.log('[UI] Checking for initiative step:', hasInitiative);
-            
-            if (hasInitiative) {
+            // Check if this is the initiative step
+            if (data.step === 'initiative') {
               console.log('[UI] Initiative step received, creating track');
               
-              // Wait a moment to ensure all data is processed
+              // Create a prompt from the initiative
+              const initiativeContent = typeof data.content === 'string' 
+                ? data.content 
+                : JSON.stringify(data.content);
+                
+              const prompt = `Create a track based on this initiative:\n\n${initiativeContent}`;
+              
+              console.log('[UI] Created prompt from initiative:', prompt);
+              
+              // Create the track with a slight delay to ensure UI updates first
               setTimeout(() => {
-                const prompt = compileThinkingResults();
-                if (prompt) {
-                  console.log('[UI] Created prompt from initiative, creating track');
-                  createTrackFromThinking(prompt);
-                } else {
-                  console.error('[UI] Failed to create prompt from initiative');
-                }
-              }, 1000);
-            } else {
-              console.log('[UI] Waiting for initiative step');
+                createTrackFromThinking(prompt);
+              }, 500);
             }
             
             return newThoughts;
