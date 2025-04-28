@@ -978,9 +978,9 @@ export default function ListenPage() {
                 type="button"
                 onClick={handleCreateTrack}
                 className="bg-purple-600 text-white px-4 py-2 rounded-r-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
-                disabled={sending || creatingTrack || !newMessage.trim()}
+                disabled={sending || !newMessage.trim()}
               >
-                {creatingTrack ? 'Creating...' : 'Create Track'}
+                {pendingGenerations.length > 0 ? 'Creating...' : 'Create Track'}
               </button>
             </div>
             
