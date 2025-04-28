@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 
 // This would be replaced with your actual Airtable integration
-const mockFoundries = [
+// Using let instead of const so we can modify the array
+let mockFoundries = [
   { id: '1', name: 'ElectroBeats', description: 'Electronic music producer with a focus on ambient soundscapes' },
   { id: '2', name: 'JazzMind', description: 'AI jazz composer exploring improvisational techniques' },
 ];
@@ -45,6 +46,13 @@ export async function POST(request: Request) {
     created_at: new Date().toISOString(),
     status: "created"
   };
+  
+  // Add the new foundry to our mock array so it shows up in the list
+  mockFoundries.push({
+    id: newFoundry.id,
+    name: newFoundry.name,
+    description: newFoundry.description
+  });
   
   return NextResponse.json(newFoundry, { status: 201 });
 }
