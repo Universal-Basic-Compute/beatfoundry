@@ -123,7 +123,7 @@ export default function ListenPage() {
         
         // If we had a current track, find and restore it in the new tracks list
         if (currentTrackId) {
-          const updatedCurrentTrack = data.find(track => track.id === currentTrackId);
+          const updatedCurrentTrack = data.find((track: Track) => track.id === currentTrackId);
           if (updatedCurrentTrack) {
             // Update the current track with the latest data, but don't reset playback
             setCurrentTrack(updatedCurrentTrack);
