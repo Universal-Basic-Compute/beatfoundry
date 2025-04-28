@@ -1,5 +1,5 @@
 const KINOS_API_BASE_URL = process.env.KINOS_API_BASE_URL || 'https://api.kinos-engine.ai/v2';
-const BLUEPRINT_ID = process.env.KINOS_BLUEPRINT_ID || 'kinos';
+const BLUEPRINT_ID = process.env.KINOS_BLUEPRINT_ID || 'beatfoundry';
 
 export async function sendChannelMessage(
   kinId: string,
