@@ -228,13 +228,13 @@ export default function ListenPage() {
     
     return () => {
       console.log(`[UI] Cleaning up intervals in useEffect`);
-      // Only clear the polling interval for task status if it exists
-      if (pollingInterval) {
+      // Clear all polling intervals
+      Object.values(intervalsRef.current).forEach(interval => {
         console.log(`[UI] Clearing polling interval in cleanup`);
-        clearInterval(pollingInterval);
-      }
+        clearInterval(interval);
+      });
     };
-  }, [foundryId, pollingInterval]); // Keep currentTrack and isPlaying out of dependencies
+  }, [foundryId]); // Only keep foundryId in dependencies since we're using a ref
   
   // Handle audio playback
   useEffect(() => {
