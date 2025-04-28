@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
     KINOS_API_KEY: process.env.KINOS_API_KEY,
     KINOS_API_BASE_URL: process.env.KINOS_API_BASE_URL || 'https://api.kinos-engine.ai/v2',
     KINOS_BLUEPRINT_ID: process.env.KINOS_BLUEPRINT_ID || 'kinos',
+    SUNO_API_KEY: process.env.SUNO_API_KEY,
   },
 };
 
