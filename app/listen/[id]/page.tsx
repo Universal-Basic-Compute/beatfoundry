@@ -618,10 +618,10 @@ export default function ListenPage() {
                         : 'bg-black/10 dark:bg-white/20 mr-8'
                     }`}
                   >
-                    <div className="font-medium mb-1">
+                    <div className="font-medium mb-1 text-sm">
                       {message.role === 'user' ? 'You' : foundry?.name || 'AI Musician'}
                     </div>
-                    <div className={message.role === 'user' ? '' : 'prose dark:prose-invert prose-sm max-w-none'}>
+                    <div className={message.role === 'user' ? 'text-sm' : 'prose dark:prose-invert prose-sm max-w-none text-sm'}>
                       {message.role === 'user' ? (
                         <div>{message.content}</div>
                       ) : (
@@ -635,7 +635,7 @@ export default function ListenPage() {
                 ))}
                 {sending && (
                   <div className="bg-black/10 dark:bg-white/20 p-3 rounded-lg mr-8">
-                    <div className="font-medium mb-1">
+                    <div className="font-medium mb-1 text-sm">
                       {foundry?.name || 'AI Musician'}
                     </div>
                     <div className="flex space-x-1">
