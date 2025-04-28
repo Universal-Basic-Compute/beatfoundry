@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import ReactMarkdown from 'react-markdown';
 
 type Message = {
   id: string;
@@ -208,7 +209,13 @@ export default function ListenPage() {
                     <div className="font-medium mb-1">
                       {message.role === 'user' ? 'You' : foundry?.name || 'AI Musician'}
                     </div>
-                    <div>{message.content}</div>
+                    <div className={message.role === 'user' ? '' : 'prose dark:prose-invert prose-sm max-w-none'}>
+                      {message.role === 'user' ? (
+                        <div>{message.content}</div>
+                      ) : (
+                        <ReactMarkdown>{message.content}</ReactMarkdown>
+                      )}
+                    </div>
                     <div className="text-xs opacity-70 mt-1">
                       {new Date(message.timestamp).toLocaleTimeString()}
                     </div>
