@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getFoundries, createFoundry, foundryExists } from '@/lib/airtable';
+import { createKin } from '@/lib/kinos-api';
 
 // This is a fallback for development or when Airtable is not configured
 let mockFoundries = [
@@ -45,21 +46,52 @@ export async function POST(request: Request) {
       );
     }
     
+    // Create the kin in Kinos Engine API
+    let kinResponse;
+    try {
+      kinResponse = await createKin(body.name);
+      console.log('Kin created successfully:', kinResponse);
+    } catch (kinError: any) {
+      // If the error is a 409 (already exists), we can still proceed with creating in Airtable
+      if (kinError.message && kinError.message.includes('already exists')) {
+        console.warn('Kin already exists in Kinos Engine, but not in Airtable. Proceeding with Airtable creation.');
+      } else {
+        // For other errors, we should stop and return the error
+        console.error('Error creating kin in Kinos Engine:', kinError);
+        return NextResponse.json(
+          { error: 'Failed to create kin in Kinos Engine' },
+          { status: 500 }
+        );
+      }
+    }
+    
     // Create new foundry in Airtable
     const newFoundry = await createFoundry(body.name, body.description);
+    
+    // If we have a successful kin response, include that data
+    if (kinResponse) {
+      return NextResponse.json({
+        ...newFoundry,
+        kin_id: kinResponse.id,
+        blueprint_id: kinResponse.blueprint_id,
+        kin_status: kinResponse.status
+      }, { status: 201 });
+    }
+    
     return NextResponse.json(newFoundry, { status: 201 });
   } catch (error) {
     console.error('Error in POST /api/foundries:', error);
     
-    // If Airtable integration fails, create a mock response for development
-    console.log('Airtable integration failed, using mock data');
-    const mockFoundry = {
-      id: Date.now().toString(),
-      name: body.name,
-      description: body.description,
-      created_at: new Date().toISOString(),
-      status: "created"
-    };
+    // If all integrations fail, create a mock response for development
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('All integrations failed, using mock data');
+      const mockFoundry = {
+        id: Date.now().toString(),
+        name: body.name,
+        description: body.description,
+        created_at: new Date().toISOString(),
+        status: "created"
+      };
     
     // Add to mock foundries array for this session
     mockFoundries.push({
@@ -69,5 +101,11 @@ export async function POST(request: Request) {
     });
     
     return NextResponse.json(mockFoundry, { status: 201 });
+    }
+    
+    return NextResponse.json(
+      { error: 'Failed to create foundry' },
+      { status: 500 }
+    );
   }
 }
