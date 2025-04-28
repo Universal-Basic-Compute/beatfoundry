@@ -501,6 +501,7 @@ export default function ListenPage() {
   };
 
   // State for track generation (concept mode removed)
+  const [createButtonText, setCreateButtonText] = useState('Create Track');
   
   const handleCreateTrack = async () => {
     if (!newMessage.trim()) return;
@@ -508,6 +509,9 @@ export default function ListenPage() {
     console.log(`[UI] Creating track for foundry ID: ${foundryId}`);
     console.log(`[UI] Message content: ${newMessage}`);
     console.log(`[UI] Instrumental: ${instrumental}`);
+    
+    // Change button text
+    setCreateButtonText('Creating...');
     
     // Store the message content before clearing it
     const messageContent = newMessage;
@@ -523,6 +527,11 @@ export default function ListenPage() {
       status: 'INITIALIZING',
       createdAt: new Date().toISOString()
     }]);
+    
+    // Reset button text after a short delay (1.5 seconds)
+    setTimeout(() => {
+      setCreateButtonText('Create Track');
+    }, 1500);
     
     try {
       console.log(`[UI] Sending POST request to /api/foundries/${foundryId}/tracks`);
@@ -1054,7 +1063,7 @@ export default function ListenPage() {
                 className="bg-purple-600 text-white px-4 py-2 rounded-r-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
                 disabled={sending || !newMessage.trim()}
               >
-                {pendingGenerations.length > 0 ? 'Creating...' : 'Create Track'}
+                {createButtonText}
               </button>
             </div>
             
