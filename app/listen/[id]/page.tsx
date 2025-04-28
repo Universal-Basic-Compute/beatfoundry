@@ -52,9 +52,29 @@ export default function ListenPage() {
   const [loadingTracks, setLoadingTracks] = useState(true);
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [duration, setDuration] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
+  
+  // Format time in MM:SS format
+  const formatTime = (time: number) => {
+    if (isNaN(time)) return '0:00';
+    
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+  
+  // Handle seeking
+  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (audioRef.current) {
+      const newTime = parseFloat(e.target.value);
+      audioRef.current.currentTime = newTime;
+      setCurrentTime(newTime);
+    }
+  };
   
   // Fetch foundry details
   useEffect(() => {
@@ -166,6 +186,25 @@ export default function ListenPage() {
       }
     }
   }, [currentTrack, isPlaying]);
+  
+  // Add event listeners for audio progress
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    
+    const updateTime = () => setCurrentTime(audio.currentTime);
+    const updateDuration = () => setDuration(audio.duration);
+    
+    audio.addEventListener('timeupdate', updateTime);
+    audio.addEventListener('durationchange', updateDuration);
+    audio.addEventListener('loadedmetadata', updateDuration);
+    
+    return () => {
+      audio.removeEventListener('timeupdate', updateTime);
+      audio.removeEventListener('durationchange', updateDuration);
+      audio.removeEventListener('loadedmetadata', updateDuration);
+    };
+  }, []);
   
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -494,28 +533,49 @@ export default function ListenPage() {
                     <p className="text-gray-600 dark:text-gray-400">
                       {currentTrack ? currentTrack.name : 'Select a track'}
                     </p>
-                    <div className="mt-6 flex justify-center space-x-4">
-                      <button 
-                        onClick={playPreviousTrack}
-                        className="p-3 rounded-full bg-foreground text-background"
-                        disabled={!currentTrack}
-                      >
-                        <span>⏮️</span>
-                      </button>
-                      <button 
-                        onClick={togglePlayPause}
-                        className="p-3 rounded-full bg-foreground text-background"
-                        disabled={!currentTrack}
-                      >
-                        <span>{isPlaying ? '⏸️' : '▶️'}</span>
-                      </button>
-                      <button 
-                        onClick={playNextTrack}
-                        className="p-3 rounded-full bg-foreground text-background"
-                        disabled={!currentTrack}
-                      >
-                        <span>⏭️</span>
-                      </button>
+                    <div className="mt-6">
+                      {/* Progress bar */}
+                      <div className="flex items-center space-x-2 mb-3">
+                        <span className="text-xs">{formatTime(currentTime)}</span>
+                        <input
+                          type="range"
+                          min="0"
+                          max={duration || 0}
+                          value={currentTime}
+                          onChange={handleSeek}
+                          className="flex-1 h-2 bg-gray-300 dark:bg-gray-700 rounded-full appearance-none cursor-pointer"
+                          style={{
+                            background: `linear-gradient(to right, #6366f1 ${(currentTime / (duration || 1)) * 100}%, #d1d5db ${(currentTime / (duration || 1)) * 100}%)`
+                          }}
+                          disabled={!currentTrack}
+                        />
+                        <span className="text-xs">{formatTime(duration)}</span>
+                      </div>
+                      
+                      {/* Playback controls */}
+                      <div className="flex justify-center space-x-4">
+                        <button 
+                          onClick={playPreviousTrack}
+                          className="p-3 rounded-full bg-foreground text-background"
+                          disabled={!currentTrack}
+                        >
+                          <span>⏮️</span>
+                        </button>
+                        <button 
+                          onClick={togglePlayPause}
+                          className="p-3 rounded-full bg-foreground text-background"
+                          disabled={!currentTrack}
+                        >
+                          <span>{isPlaying ? '⏸️' : '▶️'}</span>
+                        </button>
+                        <button 
+                          onClick={playNextTrack}
+                          className="p-3 rounded-full bg-foreground text-background"
+                          disabled={!currentTrack}
+                        >
+                          <span>⏭️</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                   
@@ -544,6 +604,9 @@ export default function ListenPage() {
                   onEnded={playNextTrack}
                   onPlay={() => setIsPlaying(true)}
                   onPause={() => setIsPlaying(false)}
+                  onTimeUpdate={() => setCurrentTime(audioRef.current?.currentTime || 0)}
+                  onDurationChange={() => setDuration(audioRef.current?.duration || 0)}
+                  onLoadedMetadata={() => setDuration(audioRef.current?.duration || 0)}
                 />
               </div>
             )}
