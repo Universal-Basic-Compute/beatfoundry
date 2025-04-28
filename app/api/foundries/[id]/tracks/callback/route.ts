@@ -43,21 +43,52 @@ export async function POST(request, { params }) {
             // Extract track details - handle different possible structures
             const audioUrl = track.audio_url || track.audioUrl || track.url || '';
             const title = track.title || track.name || 'Untitled Track';
-            const prompt = track.prompt || track.description || '';
-            
+            let extractedPrompt = track.prompt || track.description || '';
+            let extractedLyrics = track.lyrics || '';
+
             console.log('[CALLBACK] Extracted track details:');
             console.log(`[CALLBACK] - Title: "${title}"`);
             console.log(`[CALLBACK] - Audio URL: "${audioUrl}"`);
-            console.log(`[CALLBACK] - Prompt: "${prompt}"`);
-            
+
             if (!audioUrl) {
               console.error('[CALLBACK] No audio URL found in track data');
               continue;
             }
-            
-            // Get the lyrics from the track data or use a placeholder
-            const lyrics = track.lyrics || prompt || "No lyrics available";
-            console.log(`[CALLBACK] - Lyrics: "${lyrics.substring(0, 100)}${lyrics.length > 100 ? '...' : ''}"`);
+
+            // Properly separate prompt and lyrics
+            // If the prompt looks like lyrics, move it to lyrics field
+            if (extractedPrompt && !extractedLyrics) {
+              if (extractedPrompt.includes('\n') || 
+                  /verse|chorus|bridge|intro|outro/i.test(extractedPrompt)) {
+                extractedLyrics = extractedPrompt;
+                extractedPrompt = 'Music generated from these lyrics';
+              }
+            }
+
+            // If we have neither, check other fields
+            if (!extractedPrompt && !extractedLyrics) {
+              if (track.text) {
+                if (track.text.includes('\n') || 
+                    /verse|chorus|bridge|intro|outro/i.test(track.text)) {
+                  extractedLyrics = track.text;
+                  extractedPrompt = 'Music generated from these lyrics';
+                } else {
+                  extractedPrompt = track.text;
+                }
+              }
+            }
+
+            // Ensure we have at least something in the prompt field
+            if (!extractedPrompt && extractedLyrics) {
+              extractedPrompt = 'Music generated from these lyrics';
+            }
+
+            console.log(`[CALLBACK] - Prompt: "${extractedPrompt}"`);
+            console.log(`[CALLBACK] - Lyrics: "${extractedLyrics.substring(0, 100)}${extractedLyrics.length > 100 ? '...' : ''}"`);
+
+            // Use the properly separated prompt and lyrics
+            const prompt = extractedPrompt;
+            const lyrics = extractedLyrics || ""; // Use empty string instead of placeholder
             
             // For multiple tracks from the same task, create a unique title for each
             const uniqueTitle = tracks.length > 1 

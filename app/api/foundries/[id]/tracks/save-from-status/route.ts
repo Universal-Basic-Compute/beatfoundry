@@ -33,24 +33,51 @@ export async function POST(request: NextRequest, { params }: any) {
         const title = track.title || 'Untitled Track';
         
         // Make sure we extract prompt and lyrics correctly
-        // If track has both prompt and lyrics fields, use them directly
-        // If track only has one, make sure it goes to the right place
         let prompt = '';
         let lyrics = '';
-        
+
+        // First, check if we have dedicated fields
         if (track.prompt) {
           prompt = track.prompt;
         }
-        
+
         if (track.lyrics) {
           lyrics = track.lyrics;
-        } else if (prompt && !lyrics) {
-          // If we have a prompt but no lyrics, and this looks like lyrics content
-          // (checking for line breaks or verse markers can help identify lyrics)
+        }
+
+        // If we only have prompt but it looks like lyrics, move it to lyrics field
+        if (prompt && !lyrics) {
+          // Check if the prompt looks like lyrics (has line breaks, verse markers, etc.)
           if (prompt.includes('\n') || 
-              /verse|chorus|bridge/i.test(prompt)) {
+              /verse|chorus|bridge|intro|outro/i.test(prompt)) {
             lyrics = prompt;
+            // Set a generic prompt instead
+            prompt = 'Music generated from these lyrics';
           }
+        }
+
+        // If we have neither, use any available text field
+        if (!prompt && !lyrics) {
+          if (track.text) {
+            // Determine if it's lyrics or a prompt
+            if (track.text.includes('\n') || 
+                /verse|chorus|bridge|intro|outro/i.test(track.text)) {
+              lyrics = track.text;
+              prompt = 'Music generated from these lyrics';
+            } else {
+              prompt = track.text;
+            }
+          }
+        }
+
+        // Ensure we have at least something in both fields
+        if (!prompt && lyrics) {
+          prompt = 'Music generated from these lyrics';
+        }
+
+        if (!lyrics && prompt) {
+          // Don't automatically create lyrics from a prompt
+          lyrics = '';
         }
 
         if (!audioUrl) {
