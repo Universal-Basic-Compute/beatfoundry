@@ -149,9 +149,9 @@ export default function Home() {
               <div key={foundry.id} className="border rounded-lg p-6 hover:shadow-md transition-shadow">
                 <h3 className="text-xl font-semibold mb-2">{foundry.name}</h3>
                 <p className="text-gray-600 dark:text-gray-300 mb-4">{foundry.description}</p>
-                <button className="text-sm underline hover:no-underline">
-                  View Profile
-                </button>
+                <a href={`/listen/${foundry.id}`} className="text-sm underline hover:no-underline">
+                  Listen
+                </a>
               </div>
             ))}
           </div>
