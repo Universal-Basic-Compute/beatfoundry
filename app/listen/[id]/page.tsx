@@ -28,6 +28,9 @@ export default function ListenPage() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [creatingTrack, setCreatingTrack] = useState(false);
+  const [trackCreated, setTrackCreated] = useState(false);
+  const [trackError, setTrackError] = useState<string | null>(null);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
@@ -129,6 +132,36 @@ export default function ListenPage() {
       setError('Failed to send message. Please try again.');
     } finally {
       setSending(false);
+    }
+  };
+  
+  const handleCreateTrack = async () => {
+    if (!newMessage.trim()) return;
+    
+    setCreatingTrack(true);
+    setTrackError(null);
+    setTrackCreated(false);
+    
+    try {
+      const response = await fetch(`/api/foundries/${foundryId}/tracks`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          content: newMessage,
+        }),
+      });
+      
+      if (!response.ok) throw new Error('Failed to create track');
+      
+      setTrackCreated(true);
+      setNewMessage('');
+    } catch (err) {
+      console.error('Error creating track:', err);
+      setTrackError('Failed to create track. Please try again.');
+    } finally {
+      setCreatingTrack(false);
     }
   };
   
@@ -238,22 +271,42 @@ export default function ListenPage() {
             )}
           </div>
           
-          <form onSubmit={handleSendMessage} className="flex">
-            <input
-              type="text"
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              placeholder="Type your message..."
-              className="flex-1 p-3 border rounded-l-lg dark:bg-gray-800 dark:border-gray-700"
-              disabled={sending}
-            />
-            <button
-              type="submit"
-              className="bg-foreground text-background px-4 py-2 rounded-r-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
-              disabled={sending || !newMessage.trim()}
-            >
-              {sending ? 'Sending...' : 'Send'}
-            </button>
+          <form onSubmit={handleSendMessage} className="flex flex-col">
+            <div className="flex mb-2">
+              <input
+                type="text"
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                placeholder="Type your message..."
+                className="flex-1 p-3 border rounded-l-lg dark:bg-gray-800 dark:border-gray-700"
+                disabled={sending || creatingTrack}
+              />
+              <button
+                type="submit"
+                className="bg-foreground text-background px-4 py-2 rounded-none font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                disabled={sending || creatingTrack || !newMessage.trim()}
+              >
+                {sending ? 'Sending...' : 'Send'}
+              </button>
+              <button
+                type="button"
+                onClick={handleCreateTrack}
+                className="bg-purple-600 text-white px-4 py-2 rounded-r-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                disabled={sending || creatingTrack || !newMessage.trim()}
+              >
+                {creatingTrack ? 'Creating...' : 'Create Track'}
+              </button>
+            </div>
+            
+            {trackError && (
+              <div className="text-red-500 text-sm mt-1">{trackError}</div>
+            )}
+            
+            {trackCreated && (
+              <div className="text-green-500 text-sm mt-1">
+                Track created successfully! It will appear in the music player soon.
+              </div>
+            )}
           </form>
         </div>
       </main>

@@ -1,6 +1,63 @@
 const KINOS_API_BASE_URL = process.env.KINOS_API_BASE_URL || 'https://api.kinos-engine.ai/v2';
 const BLUEPRINT_ID = process.env.KINOS_BLUEPRINT_ID || 'kinos';
 
+export async function sendChannelMessage(
+  kinId: string,
+  channelId: string,
+  content: string,
+  options?: {
+    images?: string[];
+    attachments?: string[];
+    model?: string;
+    historyLength?: number;
+    mode?: 'creative' | 'balanced' | 'precise';
+    addSystem?: string;
+    addContext?: string[];
+    minFiles?: number;
+    maxFiles?: number;
+  }
+) {
+  const url = `${KINOS_API_BASE_URL}/blueprints/${BLUEPRINT_ID}/kins/${kinId}/channels/${channelId}/messages`;
+  
+  console.log(`Sending message to channel: ${url}`);
+  
+  const requestBody: any = {
+    content,
+  };
+  
+  if (options?.images) requestBody.images = options.images;
+  if (options?.attachments) requestBody.attachments = options.attachments;
+  if (options?.model) requestBody.model = options.model;
+  if (options?.historyLength) requestBody.history_length = options.historyLength;
+  if (options?.mode) requestBody.mode = options.mode;
+  if (options?.addSystem) requestBody.addSystem = options.addSystem;
+  if (options?.addContext) requestBody.addContext = options.addContext;
+  if (options?.minFiles) requestBody.min_files = options.minFiles;
+  if (options?.maxFiles) requestBody.max_files = options.maxFiles;
+  
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.KINOS_API_KEY}`,
+      },
+      body: JSON.stringify(requestBody),
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || `Failed to send channel message: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error sending channel message:', error);
+    throw error;
+  }
+}
+
 type Message = {
   id: string;
   role: 'user' | 'assistant';
