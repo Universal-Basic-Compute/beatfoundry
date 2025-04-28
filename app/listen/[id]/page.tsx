@@ -1002,17 +1002,17 @@ export default function ListenPage() {
   
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="bg-black/5 dark:bg-white/10 p-4 border-b">
+      <header className="bg-muted/50 dark:bg-muted/10 p-4 border-b border-border">
         <div className="max-w-6xl mx-auto flex justify-between items-center">
-          <Link href="/" className="text-xl font-bold">BeatFoundry</Link>
-          {foundry && <h1 className="text-xl font-semibold">{foundry.name}</h1>}
+          <Link href="/" className="text-xl font-bold text-foreground">BeatFoundry</Link>
+          {foundry && <h1 className="text-xl font-semibold text-foreground">{foundry.name}</h1>}
         </div>
       </header>
       
       <main className="flex-1 flex flex-col md:flex-row max-w-6xl mx-auto w-full">
         {/* Left side - Music Player */}
         <div className="w-full md:w-1/2 p-6 border-r">
-          <div className="bg-black/5 dark:bg-white/10 rounded-lg p-6 h-full flex flex-col">
+          <div className="bg-card text-card-foreground rounded-lg p-6 h-full flex flex-col">
             <h2 className="text-2xl font-semibold mb-4">Music Player</h2>
             
             {loadingTracks ? (
@@ -1045,23 +1045,23 @@ export default function ListenPage() {
                   <div className="mt-6">
                     <div className="space-y-4">
                       {pendingGenerations.map(gen => (
-                        <div key={gen.id} className="bg-black/10 dark:bg-white/10 p-4 rounded-lg">
+                        <div key={gen.id} className="bg-card/50 dark:bg-card/30 p-4 rounded-lg">
                           <div className="flex justify-between items-center mb-2">
                             <span className="font-medium">{gen.title}</span>
-                            <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                            <span className="text-xs px-2 py-1 rounded-full bg-primary/20 text-primary dark:bg-primary/30 dark:text-primary-foreground">
                               {gen.status}
                             </span>
                           </div>
-                          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                          <div className="w-full bg-muted dark:bg-muted/50 rounded-full h-2.5">
                             <div 
                               className={`h-2.5 rounded-full ${
                                 gen.status === 'SUCCESS' || gen.status === 'FIRST_SUCCESS' 
-                                  ? 'bg-green-600 w-full' 
+                                  ? 'bg-success w-full' 
                                   : gen.status.includes('FAILED') || gen.status === 'ERROR'
-                                    ? 'bg-red-600 w-full'
+                                    ? 'bg-destructive w-full'
                                     : gen.status === 'INITIALIZING'
-                                      ? 'bg-purple-600 animate-pulse w-1/4' // Show a shorter progress bar for initializing
-                                      : 'bg-blue-600 animate-pulse w-full'
+                                      ? 'bg-primary animate-pulse w-1/4' // Show a shorter progress bar for initializing
+                                      : 'bg-accent animate-pulse w-full'
                               }`}
                             ></div>
                           </div>
@@ -1140,9 +1140,9 @@ export default function ListenPage() {
                           max={duration || 0}
                           value={currentTime}
                           onChange={handleSeek}
-                          className="flex-1 h-2 bg-gray-300 dark:bg-gray-700 rounded-full appearance-none cursor-pointer"
+                          className="flex-1 h-2 bg-muted rounded-full appearance-none cursor-pointer"
                           style={{
-                            background: `linear-gradient(to right, #6366f1 ${(currentTime / (duration || 1)) * 100}%, #d1d5db ${(currentTime / (duration || 1)) * 100}%)`
+                            background: `linear-gradient(to right, var(--primary) ${(currentTime / (duration || 1)) * 100}%, var(--muted) ${(currentTime / (duration || 1)) * 100}%)`
                           }}
                           disabled={!currentTrack}
                         />
@@ -1153,21 +1153,21 @@ export default function ListenPage() {
                       <div className="flex justify-center space-x-4">
                         <button 
                           onClick={playPreviousTrack}
-                          className="p-3 rounded-full bg-foreground text-background"
+                          className="p-3 rounded-full bg-primary text-primary-foreground"
                           disabled={!currentTrack}
                         >
                           <span>⏮️</span>
                         </button>
                         <button 
                           onClick={togglePlayPause}
-                          className="p-3 rounded-full bg-foreground text-background"
+                          className="p-3 rounded-full bg-primary text-primary-foreground"
                           disabled={!currentTrack}
                         >
                           <span>{isPlaying ? '⏸️' : '▶️'}</span>
                         </button>
                         <button 
                           onClick={playNextTrack}
-                          className="p-3 rounded-full bg-foreground text-background"
+                          className="p-3 rounded-full bg-primary text-primary-foreground"
                           disabled={!currentTrack}
                         >
                           <span>⏭️</span>
@@ -1345,7 +1345,7 @@ export default function ListenPage() {
                         <span>Instrumental Only</span>
                         <button 
                           onClick={() => setInstrumental(!instrumental)}
-                          className={`relative inline-flex h-6 w-11 items-center rounded-full ${instrumental ? 'bg-purple-600' : 'bg-gray-300 dark:bg-gray-600'}`}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full ${instrumental ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'}`}
                         >
                           <span 
                             className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${instrumental ? 'translate-x-6' : 'translate-x-1'}`} 
@@ -1363,7 +1363,7 @@ export default function ListenPage() {
                         <span>Create Autonomously</span>
                         <button 
                           onClick={() => setAutonomousMode(!autonomousMode)}
-                          className={`relative inline-flex h-6 w-11 items-center rounded-full ${autonomousMode ? 'bg-purple-600' : 'bg-gray-300 dark:bg-gray-600'}`}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full ${autonomousMode ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'}`}
                         >
                           <span 
                             className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${autonomousMode ? 'translate-x-6' : 'translate-x-1'}`} 
@@ -1413,8 +1413,8 @@ export default function ListenPage() {
                       <div 
                         className={`p-3 rounded-lg ${
                           message.role === 'user' 
-                            ? 'bg-foreground text-background ml-8' 
-                            : 'bg-black/10 dark:bg-white/20 mr-8'
+                            ? 'bg-primary text-primary-foreground ml-8' 
+                            : 'bg-muted dark:bg-muted/40 mr-8'
                         }`}
                       >
                         <div className="font-medium mb-1 text-sm">
@@ -1434,13 +1434,13 @@ export default function ListenPage() {
                       
                       {/* Display thoughts below the assistant's message */}
                       {message.role === 'assistant' && thoughts.length > 0 && index === messages.length - 1 && (
-                        <div className="ml-4 mr-12 mt-1 mb-3 text-xs text-gray-500 dark:text-gray-400 space-y-1">
+                        <div className="ml-4 mr-12 mt-1 mb-3 text-xs text-muted-foreground space-y-1">
                           {thoughts.map((thought, i) => {
                             // Skip the kin_response step as it's already shown in the message
                             if (thought.step === 'kin_response') return null;
                             
                             return (
-                              <div key={`thought-${i}`} className="bg-gray-100 dark:bg-gray-800 p-2 rounded">
+                              <div key={`thought-${i}`} className="bg-muted dark:bg-muted/30 p-2 rounded">
                                 <div className="font-medium mb-1">
                                   {thought.step === 'keywords' ? 'Keywords' : 
                                    thought.step === 'dream' ? 'Dream' : 
@@ -1532,7 +1532,7 @@ export default function ListenPage() {
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 placeholder="Type your message..."
-                className="flex-1 p-3 border rounded-l-lg dark:bg-gray-800 dark:border-gray-700"
+                className="flex-1 p-3 border border-input rounded-l-lg bg-background text-foreground"
                 disabled={sending}
               />
               <button
@@ -1545,7 +1545,7 @@ export default function ListenPage() {
               <button
                 type="button"
                 onClick={handleCreateTrack}
-                className="bg-purple-600 text-white px-4 py-2 rounded-r-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                className="bg-primary text-primary-foreground px-4 py-2 rounded-r-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
                 disabled={sending || !newMessage.trim()}
               >
                 {createButtonText}

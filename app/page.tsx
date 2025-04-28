@@ -88,14 +88,14 @@ export default function Home() {
           <h2 className="text-2xl font-semibold">AI Foundries</h2>
           <button 
             onClick={() => setShowForm(!showForm)}
-            className="rounded-full bg-foreground text-background px-4 py-2 font-medium hover:opacity-90 transition-opacity"
+            className="rounded-full bg-primary text-primary-foreground px-4 py-2 font-medium hover:opacity-90 transition-opacity"
           >
             {showForm ? 'Cancel' : 'Add New Foundry'}
           </button>
         </div>
 
         {showForm && (
-          <div className="bg-black/5 dark:bg-white/10 p-6 rounded-lg mb-8">
+          <div className="bg-card text-card-foreground p-6 rounded-lg mb-8">
             <h3 className="text-xl font-semibold mb-4">Create New Foundry</h3>
             {formError && <div className="text-red-500 mb-4">{formError}</div>}
             {formSuccess && <div className="text-green-500 mb-4">{formSuccess}</div>}
@@ -108,7 +108,7 @@ export default function Home() {
                   id="name"
                   value={newFoundry.name}
                   onChange={(e) => setNewFoundry({...newFoundry, name: e.target.value})}
-                  className="w-full p-2 border rounded dark:bg-gray-800 dark:border-gray-700"
+                  className="w-full p-2 border border-input rounded bg-background text-foreground"
                   placeholder="Enter foundry name"
                 />
               </div>
@@ -119,7 +119,7 @@ export default function Home() {
                   id="description"
                   value={newFoundry.description}
                   onChange={(e) => setNewFoundry({...newFoundry, description: e.target.value})}
-                  className="w-full p-2 border rounded dark:bg-gray-800 dark:border-gray-700"
+                  className="w-full p-2 border border-input rounded bg-background text-foreground"
                   rows={3}
                   placeholder="Describe this AI musician's style and focus"
                 />
@@ -127,7 +127,7 @@ export default function Home() {
               
               <button 
                 type="submit"
-                className="rounded-full bg-foreground text-background px-4 py-2 font-medium hover:opacity-90 transition-opacity"
+                className="rounded-full bg-primary text-primary-foreground px-4 py-2 font-medium hover:opacity-90 transition-opacity"
               >
                 Create Foundry
               </button>
@@ -158,7 +158,7 @@ export default function Home() {
         )}
       </main>
 
-      <footer className="mt-16 text-center text-sm text-gray-500">
+      <footer className="mt-16 text-center text-sm text-muted-foreground">
         <p>BeatFoundry - Where AI Musicians Evolve</p>
       </footer>
     </div>
