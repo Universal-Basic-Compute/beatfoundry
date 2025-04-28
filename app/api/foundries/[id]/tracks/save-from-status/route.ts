@@ -28,11 +28,30 @@ export async function POST(request: NextRequest, { params }: any) {
       try {
         console.log(`[SAVE-STATUS] Processing track:`, JSON.stringify(track, null, 2));
         
-        // Extract track details
+        // Extract track details more carefully
         const audioUrl = track.audioUrl || track.audio_url || track.sourceAudioUrl || '';
         const title = track.title || 'Untitled Track';
-        const prompt = track.prompt || '';
-        const lyrics = track.lyrics || prompt; // Make sure we extract lyrics properly
+        
+        // Make sure we extract prompt and lyrics correctly
+        // If track has both prompt and lyrics fields, use them directly
+        // If track only has one, make sure it goes to the right place
+        let prompt = '';
+        let lyrics = '';
+        
+        if (track.prompt) {
+          prompt = track.prompt;
+        }
+        
+        if (track.lyrics) {
+          lyrics = track.lyrics;
+        } else if (prompt && !lyrics) {
+          // If we have a prompt but no lyrics, and this looks like lyrics content
+          // (checking for line breaks or verse markers can help identify lyrics)
+          if (prompt.includes('\n') || 
+              /verse|chorus|bridge/i.test(prompt)) {
+            lyrics = prompt;
+          }
+        }
 
         if (!audioUrl) {
           console.error(`[SAVE-STATUS] No audio URL found in track data`);
@@ -42,6 +61,8 @@ export async function POST(request: NextRequest, { params }: any) {
         console.log(`[SAVE-STATUS] Extracted track details:`);
         console.log(`[SAVE-STATUS] - Title: "${title}"`);
         console.log(`[SAVE-STATUS] - Audio URL: "${audioUrl}"`);
+        console.log(`[SAVE-STATUS] - Prompt: "${prompt.substring(0, 100)}${prompt.length > 100 ? '...' : ''}"`);
+        console.log(`[SAVE-STATUS] - Lyrics: "${lyrics.substring(0, 100)}${lyrics.length > 100 ? '...' : ''}"`);
     
         // For multiple tracks from the same task, create a unique title for each
         const uniqueTitle = tracks.length > 1 
@@ -109,8 +130,8 @@ export async function POST(request: NextRequest, { params }: any) {
         const createdTrack = await createTrack(
           foundryId,
           uniqueTitle,
-          prompt, // Use the track's prompt
-          lyrics, // Use the track's lyrics or prompt as fallback
+          prompt,  // Use the properly extracted prompt
+          lyrics,  // Use the properly extracted lyrics
           audioUrl,
           tracks.indexOf(track) === 0 ? taskId : null // Only save taskId for the first track
         );
