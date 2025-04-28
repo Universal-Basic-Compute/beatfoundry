@@ -248,13 +248,46 @@ export default function ListenPage() {
         const data = await response.json();
         console.log(`[UI] Task status response:`, data);
         
-        if (data.data?.response?.status) {
-          const status = data.data.response.status;
+        // Check for status in the correct location
+        // It could be in data.data.response.status or data.data.status
+        const status = data.data?.response?.status || data.data?.status;
+        
+        if (status) {
           setGenerationStatus(status);
           
           // If the task is complete, stop polling and refresh tracks
           if (status === 'SUCCESS' || status === 'FIRST_SUCCESS') {
             console.log(`[UI] Music generation completed successfully!`);
+            
+            // Check if we have track data in the response
+            const trackData = data.data?.response?.sunoData;
+            if (trackData && trackData.length > 0) {
+              console.log(`[UI] Found ${trackData.length} tracks in response:`, trackData);
+              
+              // Save these tracks to Airtable via our API
+              try {
+                console.log(`[UI] Saving tracks from status response to Airtable`);
+                const saveResponse = await fetch(`/api/foundries/${foundryId}/tracks/save-from-status`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    taskId: taskId,
+                    tracks: trackData
+                  }),
+                });
+                
+                if (!saveResponse.ok) {
+                  console.error(`[UI] Error saving tracks from status:`, await saveResponse.text());
+                } else {
+                  console.log(`[UI] Successfully saved tracks from status response`);
+                }
+              } catch (saveError) {
+                console.error(`[UI] Error saving tracks from status:`, saveError);
+              }
+            }
+            
             clearInterval(intervalId);
             setPollingInterval(null);
             setPollingTaskId(null);
@@ -282,7 +315,7 @@ export default function ListenPage() {
             clearInterval(intervalId);
             setPollingInterval(null);
             setPollingTaskId(null);
-            setTrackError(`Music generation failed: ${data.data.response.errorMessage || status}`);
+            setTrackError(`Music generation failed: ${data.data.response?.errorMessage || status}`);
           }
         }
       } catch (error) {

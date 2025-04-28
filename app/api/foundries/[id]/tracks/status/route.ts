@@ -46,15 +46,22 @@ export async function GET(request: NextRequest, { params }: any) {
     const data = await response.json();
     console.log(`[STATUS] Status check response:`, data);
     
+    // Check for status in the correct location
+    const status = data.data?.response?.status || data.data?.status;
+    
     // If the status is SUCCESS, we can get the track URLs
-    if (data.code === 200 && data.data?.response?.status === 'SUCCESS') {
+    if (data.code === 200 && status === 'SUCCESS') {
       console.log(`[STATUS] Music generation completed successfully!`);
       
-      // The data structure might include the track URLs directly
-      // If so, we can extract them and update the track in Airtable
-      // This is a fallback in case the callback didn't work
+      // Check if we have track data in the response
+      const trackData = data.data?.response?.sunoData;
+      if (trackData && trackData.length > 0) {
+        console.log(`[STATUS] Found ${trackData.length} tracks in response`);
+        console.log(`[STATUS] First track audio URL: ${trackData[0].audioUrl || trackData[0].sourceAudioUrl}`);
+        
+        // We'll let the client handle saving these tracks
+      }
       
-      // For now, just return the status data
       return NextResponse.json(data);
     }
     
