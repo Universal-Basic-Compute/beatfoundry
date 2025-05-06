@@ -1572,88 +1572,88 @@ export default function ListenPage() {
         <div className="w-full md:w-1/2 flex flex-col h-full relative overflow-hidden">
           <div className="absolute inset-0 flex flex-col p-6">
             <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center">
-              <h2 className="text-2xl font-bold text-foreground">Chat with {foundry?.name || 'AI Musician'}</h2>
-              
-              <div className="relative ml-2 group">
-                <button 
-                  className="w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xs font-bold"
-                  aria-label="Information"
-                >
-                  i
-                </button>
-                <div className="absolute left-0 bottom-full mb-2 w-64 p-3 bg-card rounded-lg shadow-lg text-xs z-10 hidden group-hover:block border border-border">
-                  <p className="mb-2 font-semibold">How to use:</p>
-                  <p className="mb-2 text-muted-foreground">1. Use <strong>Send</strong> to chat with the AI and guide its artistic direction.</p>
-                  <p className="text-muted-foreground">2. Use <strong>Create Track</strong> to generate music based on your prompt.</p>
+              <div className="flex items-center">
+                <h2 className="text-2xl font-bold text-foreground">Chat with {foundry?.name || 'AI Musician'}</h2>
+                
+                <div className="relative ml-2 group">
+                  <button 
+                    className="w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xs font-bold"
+                    aria-label="Information"
+                  >
+                    i
+                  </button>
+                  <div className="absolute left-0 bottom-full mb-2 w-64 p-3 bg-card rounded-lg shadow-lg text-xs z-10 hidden group-hover:block border border-border">
+                    <p className="mb-2 font-semibold">How to use:</p>
+                    <p className="mb-2 text-muted-foreground">1. Use <strong>Send</strong> to chat with the AI and guide its artistic direction.</p>
+                    <p className="text-muted-foreground">2. Use <strong>Create Track</strong> to generate music based on your prompt.</p>
+                  </div>
                 </div>
+              </div>
+              
+              <div className="relative">
+                <button 
+                  onClick={() => setShowOptions(!showOptions)}
+                  className="p-2 rounded-full bg-background hover:bg-muted transition-colors"
+                  aria-label="Options"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="1"></circle>
+                    <circle cx="19" cy="12" r="1"></circle>
+                    <circle cx="5" cy="12" r="1"></circle>
+                  </svg>
+                </button>
+                
+                {/* Improved options menu */}
+                {showOptions && (
+                  <div className="absolute right-0 mt-2 w-64 rounded-lg shadow-lg bg-background border border-border z-10 options-menu animate-fadeIn">
+                    <div className="py-2" role="menu" aria-orientation="vertical">
+                      <div className="px-4 py-3 text-sm">
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium">Instrumental Only</span>
+                          <button 
+                            onClick={() => setInstrumental(!instrumental)}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${instrumental ? 'bg-primary' : 'bg-muted'}`}
+                          >
+                            <span 
+                              className={`inline-block h-4 w-4 transform rounded-full bg-background shadow-md transition-transform duration-200 ${instrumental ? 'translate-x-6' : 'translate-x-1'}`} 
+                            />
+                          </button>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {instrumental ? 'Generate music without lyrics' : 'Generate music with lyrics'}
+                        </p>
+                      </div>
+                      
+                      <div className="px-4 py-3 text-sm border-t border-border">
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium">Create Autonomously</span>
+                          <button 
+                            onClick={() => setAutonomousMode(!autonomousMode)}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${autonomousMode ? 'bg-primary' : 'bg-muted'}`}
+                          >
+                            <span 
+                              className={`inline-block h-4 w-4 transform rounded-full bg-background shadow-md transition-transform duration-200 ${autonomousMode ? 'translate-x-6' : 'translate-x-1'}`} 
+                            />
+                          </button>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {autonomousMode ? 'AI will generate thoughts and music autonomously' : 'AI will respond to your messages'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
             
-            <div className="relative">
-              <button 
-                onClick={() => setShowOptions(!showOptions)}
-                className="p-2 rounded-full bg-background hover:bg-muted transition-colors"
-                aria-label="Options"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="1"></circle>
-                  <circle cx="19" cy="12" r="1"></circle>
-                  <circle cx="5" cy="12" r="1"></circle>
-                </svg>
-              </button>
-              
-              {/* Improved options menu */}
-              {showOptions && (
-                <div className="absolute right-0 mt-2 w-64 rounded-lg shadow-lg bg-background border border-border z-10 options-menu animate-fadeIn">
-                  <div className="py-2" role="menu" aria-orientation="vertical">
-                    <div className="px-4 py-3 text-sm">
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium">Instrumental Only</span>
-                        <button 
-                          onClick={() => setInstrumental(!instrumental)}
-                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${instrumental ? 'bg-primary' : 'bg-muted'}`}
-                        >
-                          <span 
-                            className={`inline-block h-4 w-4 transform rounded-full bg-background shadow-md transition-transform duration-200 ${instrumental ? 'translate-x-6' : 'translate-x-1'}`} 
-                          />
-                        </button>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {instrumental ? 'Generate music without lyrics' : 'Generate music with lyrics'}
-                      </p>
-                    </div>
-                    
-                    <div className="px-4 py-3 text-sm border-t border-border">
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium">Create Autonomously</span>
-                        <button 
-                          onClick={() => setAutonomousMode(!autonomousMode)}
-                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${autonomousMode ? 'bg-primary' : 'bg-muted'}`}
-                        >
-                          <span 
-                            className={`inline-block h-4 w-4 transform rounded-full bg-background shadow-md transition-transform duration-200 ${autonomousMode ? 'translate-x-6' : 'translate-x-1'}`} 
-                          />
-                        </button>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {autonomousMode ? 'AI will generate thoughts and music autonomously' : 'AI will respond to your messages'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-          
-          {error && (
-            <div className="bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 p-3 rounded-lg mb-4">
-              {error}
-            </div>
-          )}
-          
-          {/* Improved message container with proper spacing for fixed input */}
-          <div className="flex-1 overflow-y-auto bg-black/5 dark:bg-white/5 rounded-xl p-4 custom-scrollbar mb-20">
+            {error && (
+              <div className="bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 p-3 rounded-lg mb-4">
+                {error}
+              </div>
+            )}
+            
+            {/* Improved message container with proper spacing for fixed input */}
+            <div className="flex-1 overflow-y-auto bg-black/5 dark:bg-white/5 rounded-xl p-4 custom-scrollbar mb-20">
             {loading ? (
               <div className="flex items-center justify-center h-full">
                 <div className="flex flex-col items-center">
@@ -1825,48 +1825,48 @@ export default function ListenPage() {
             )}
           </div>
           
-          {/* Fixed position message input at the bottom */}
-          <div className="absolute bottom-6 left-6 right-6 z-10">
-            <form onSubmit={handleSendMessage} className="flex flex-col">
-              <div className="flex rounded-xl overflow-hidden border border-border shadow-sm focus-within:ring-2 focus-within:ring-primary/50 transition-all bg-background">
-                <input
-                  type="text"
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Type your message..."
-                  className="flex-1 p-4 bg-background text-foreground focus:outline-none"
-                  disabled={sending}
-                />
-                <button
-                  type="submit"
-                  className="bg-foreground text-background px-5 py-4 font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center"
-                  disabled={sending || !newMessage.trim()}
-                >
-                  <span className="mr-2">Send</span>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="22" y1="2" x2="11" y2="13"></line>
-                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                  </svg>
-                </button>
-                <button
-                  type="button"
-                  onClick={handleCreateTrack}
-                  className="bg-primary text-primary-foreground px-5 py-4 font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center"
-                  disabled={sending || !newMessage.trim()}
-                >
-                  <span className="mr-2">{createButtonText}</span>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M9 18V5l12-2v13"></path>
-                    <circle cx="6" cy="18" r="3"></circle>
-                    <circle cx="18" cy="16" r="3"></circle>
-                  </svg>
-                </button>
-              </div>
-            </form>
+            {/* Fixed position message input at the bottom */}
+            <div className="absolute bottom-6 left-6 right-6 z-10">
+              <form onSubmit={handleSendMessage} className="flex flex-col">
+                <div className="flex rounded-xl overflow-hidden border border-border shadow-sm focus-within:ring-2 focus-within:ring-primary/50 transition-all bg-background">
+                  <input
+                    type="text"
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    placeholder="Type your message..."
+                    className="flex-1 p-4 bg-background text-foreground focus:outline-none"
+                    disabled={sending}
+                  />
+                  <button
+                    type="submit"
+                    className="bg-foreground text-background px-5 py-4 font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center"
+                    disabled={sending || !newMessage.trim()}
+                  >
+                    <span className="mr-2">Send</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="22" y1="2" x2="11" y2="13"></line>
+                      <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCreateTrack}
+                    className="bg-primary text-primary-foreground px-5 py-4 font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center"
+                    disabled={sending || !newMessage.trim()}
+                  >
+                    <span className="mr-2">{createButtonText}</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M9 18V5l12-2v13"></path>
+                      <circle cx="6" cy="18" r="3"></circle>
+                      <circle cx="18" cy="16" r="3"></circle>
+                    </svg>
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
-      </div>
-    </main>
-  </div>
+      </main>
+    </div>
   );
 }
