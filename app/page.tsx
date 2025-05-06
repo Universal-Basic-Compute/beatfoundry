@@ -183,7 +183,7 @@ export default function Home() {
       // Calculate total reactions for each track
       const tracksWithReactionCounts = allTracks.map(track => {
         const totalReactions = track.reactions ? 
-          Object.values(track.reactions).reduce((sum, count) => sum + (typeof count === 'number' ? count : 0), 0) : 0;
+          Object.values(track.reactions).reduce((sum: number, count) => sum + (typeof count === 'number' ? count : 0), 0) : 0;
         return { ...track, totalReactions };
       });
       
