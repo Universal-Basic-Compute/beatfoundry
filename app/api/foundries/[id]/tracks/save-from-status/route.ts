@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createTrack, updateTrackByTaskId } from '@/lib/airtable';
 
 export async function POST(request: NextRequest, { params }: any) {
-  const foundryId = params.id;
+  const { id: foundryId } = params;
   
   console.log(`[SAVE-STATUS] Saving tracks from status response for foundry ID: ${foundryId}`);
   

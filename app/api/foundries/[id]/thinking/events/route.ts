@@ -3,7 +3,7 @@ import thinkingEvents from '@/lib/thinking-events';
 
 // This endpoint will provide Server-Sent Events (SSE) for real-time thinking updates
 export async function GET(request: NextRequest, { params }: any) {
-  const foundryId = params.id;
+  const { id: foundryId } = params;
   console.log(`[EVENTS] Setting up SSE connection for foundry ID: ${foundryId}`);
   
   // Create a ReadableStream for SSE

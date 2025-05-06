@@ -5,7 +5,7 @@ import path from 'path';
 import { mkdir } from 'fs/promises';
 
 export async function POST(request: NextRequest, { params }: any) {
-  const foundryId = params.id;
+  const { id: foundryId } = params;
   
   console.log(`[DOWNLOAD] Downloading track for foundry ID: ${foundryId}`);
   
