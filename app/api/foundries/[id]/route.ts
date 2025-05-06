@@ -9,7 +9,7 @@ const mockFoundries = [
 ];
 
 export async function GET(request, { params }) {
-  const { id: foundryId } = params;
+  const foundryId = params.id;
   
   try {
     // Try to get foundry from Airtable
