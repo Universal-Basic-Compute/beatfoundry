@@ -103,11 +103,11 @@ export async function POST(request, { params }) {
     // If this is from autonomous thinking, use a more specific instruction
     const trackInstructions = fromThinking
       ? (instrumental
-          ? "You are receiving thoughts from an AI musician's autonomous thinking process. Create a JSON object containing: 1) 'prompt': a brief list of keywords for style, sonorities, and emotions (no more than 10-15 words total) based on these thoughts, 2) 'style': a specific music genre or style that fits the thoughts, 3) 'title': a creative title for the track inspired by the thoughts, and 4) 'presentation': a brief artistic explanation of the concept behind this track (2-3 sentences). Format your response as valid JSON without any additional text. This will be an instrumental track without lyrics."
-          : "You are receiving thoughts from an AI musician's autonomous thinking process. Create a JSON object containing: 1) 'prompt': a brief list of keywords for style, sonorities, and emotions (no more than 10-15 words total) based on these thoughts, 2) 'style': a specific music genre or style that fits the thoughts, 3) 'title': a creative title for the track inspired by the thoughts, 4) 'presentation': a brief artistic explanation of the concept behind this track (2-3 sentences), and 5) 'lyrics': complete lyrics for the track that reflect the thoughts. Format your response as valid JSON without any additional text.")
+          ? "You are receiving thoughts from an AI musician's autonomous thinking process. YOU MUST RESPOND WITH VALID JSON ONLY. Create a JSON object containing: 1) 'prompt': a brief list of keywords for style, sonorities, and emotions (no more than 10-15 words total) based on these thoughts, 2) 'style': a specific music genre or style that fits the thoughts, 3) 'title': a creative title for the track inspired by the thoughts, and 4) 'presentation': a brief artistic explanation of the concept behind this track (2-3 sentences). DO NOT include any explanatory text outside the JSON. This will be an instrumental track without lyrics."
+          : "You are receiving thoughts from an AI musician's autonomous thinking process. YOU MUST RESPOND WITH VALID JSON ONLY. Create a JSON object containing: 1) 'prompt': a brief list of keywords for style, sonorities, and emotions (no more than 10-15 words total) based on these thoughts, 2) 'style': a specific music genre or style that fits the thoughts, 3) 'title': a creative title for the track inspired by the thoughts, 4) 'presentation': a brief artistic explanation of the concept behind this track (2-3 sentences), and 5) 'lyrics': complete lyrics for the track that reflect the thoughts. DO NOT include any explanatory text outside the JSON.")
       : (instrumental
-          ? "Respond only with a JSON object containing: 1) 'prompt': a brief list of keywords for style, sonorities, and emotions (no more than 10-15 words total), 2) 'style': a specific music genre or style (e.g., 'Jazz', 'Classical', 'Electronic'), 3) 'title': a creative title for the track, and 4) 'presentation': a brief artistic explanation of the concept behind this track (2-3 sentences). Format your response as valid JSON without any additional text. This will be an instrumental track without lyrics."
-          : "Respond only with a JSON object containing: 1) 'prompt': a brief list of keywords for style, sonorities, and emotions (no more than 10-15 words total), 2) 'style': a specific music genre or style (e.g., 'Jazz', 'Classical', 'Electronic'), 3) 'title': a creative title for the track, 4) 'presentation': a brief artistic explanation of the concept behind this track (2-3 sentences), and 5) 'lyrics': complete lyrics for the track. Format your response as valid JSON without any additional text.");
+          ? "YOU MUST RESPOND WITH VALID JSON ONLY. No explanatory text. Create a JSON object containing: 1) 'prompt': a brief list of keywords for style, sonorities, and emotions (no more than 10-15 words total), 2) 'style': a specific music genre or style (e.g., 'Jazz', 'Classical', 'Electronic'), 3) 'title': a creative title for the track, and 4) 'presentation': a brief artistic explanation of the concept behind this track (2-3 sentences). This will be an instrumental track without lyrics."
+          : "YOU MUST RESPOND WITH VALID JSON ONLY. No explanatory text. Create a JSON object containing: 1) 'prompt': a brief list of keywords for style, sonorities, and emotions (no more than 10-15 words total), 2) 'style': a specific music genre or style (e.g., 'Jazz', 'Classical', 'Electronic'), 3) 'title': a creative title for the track, 4) 'presentation': a brief artistic explanation of the concept behind this track (2-3 sentences), and 5) 'lyrics': complete lyrics for the track. DO NOT include any explanatory text outside the JSON.");
     
     console.log(`[TRACKS] Sending message to 'tracks' channel with instructions`);
   
@@ -130,9 +130,26 @@ export async function POST(request, { params }) {
     try {
       console.log(`[TRACKS] Parsing music parameters from response content:`, messageResponse.content);
       
+      let musicParams;
+      let contentString = messageResponse.content;
+      
       // The content might be a string or an object
-      if (typeof messageResponse.content === 'string') {
-        musicParams = JSON.parse(messageResponse.content);
+      if (typeof contentString === 'string') {
+        // Try to extract JSON if it's wrapped in other text
+        const jsonMatch = contentString.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          contentString = jsonMatch[0];
+        }
+        
+        try {
+          musicParams = JSON.parse(contentString);
+        } catch (innerError) {
+          console.error(`[TRACKS] Error parsing JSON, attempting to clean content:`, innerError);
+          
+          // Try to clean the string by removing markdown code blocks
+          contentString = contentString.replace(/```json|```/g, '').trim();
+          musicParams = JSON.parse(contentString);
+        }
       } else {
         musicParams = messageResponse.content;
       }
