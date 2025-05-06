@@ -7,10 +7,10 @@ import Image from 'next/image';
 import ReactMarkdown from 'react-markdown';
 
 // Debounce utility to prevent multiple track creations
-const useDebounce = (func, delay) => {
-  const debounceRef = useRef(null);
+const useDebounce = (func: Function, delay: number) => {
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
   
-  return (...args) => {
+  return (...args: any[]) => {
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
     }
@@ -57,9 +57,10 @@ type Track = {
     '📈'?: number;
     '❌'?: number;
   };
+  totalReactions?: number;
 };
 
-export default function ListenPage() {
+export default function ListenPage(): JSX.Element {
   const params = useParams();
   const foundryId = params.id as string;
   
