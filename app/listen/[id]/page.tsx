@@ -1567,7 +1567,6 @@ export default function ListenPage() {
             )}
           </div>
         </div>
-      </div>
         
         {/* Right side - Chat */}
         <div className="w-full md:w-1/2 flex flex-col h-full relative overflow-hidden">
