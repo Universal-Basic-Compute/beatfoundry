@@ -77,7 +77,7 @@ export default function MessageList({
   }
   
   return (
-    <div className="space-y-4 message-list-container border border-green-500" ref={containerRef}>
+    <div className="space-y-4 message-list-container" ref={containerRef}>
       {messages && messages.map((message, index) => (
         <MessageItem 
           key={message.id || `message-${index}`}

@@ -84,7 +84,7 @@ export default function Chat({
   };
   
   return (
-    <div className="w-full md:w-1/2 flex flex-col h-[calc(100vh-80px)] border-2 border-red-500 bg-background">
+    <div className="w-full md:w-1/2 flex flex-col h-[calc(100vh-80px)] bg-background">
       {/* En-tête du chat */}
       <div className="flex justify-between items-center p-6">
         <div className="flex items-center">
