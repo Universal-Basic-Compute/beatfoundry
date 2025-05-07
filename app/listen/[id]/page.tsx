@@ -60,7 +60,7 @@ export default function ListenPage(): JSX.Element {
     <div className="min-h-screen flex flex-col">
       <Header foundry={foundry} />
       
-      <main className="flex-1 flex flex-col md:flex-row max-w-6xl mx-auto w-full h-[calc(100vh-80px)]">
+      <main className="flex-1 flex flex-col md:flex-row max-w-6xl mx-auto w-full h-[calc(100vh-80px)] border-2 border-blue-500">
         {/* Left side - Music Player */}
         <MusicPlayer
           tracks={tracks}

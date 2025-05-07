@@ -36,6 +36,7 @@ export default function MessageList({
 }: MessageListProps) {
   console.log('MessageList rendering with messages:', messages);
   console.log('MessageList rendering with thoughts:', thoughts);
+  console.log('MessageList component dimensions:', document.querySelector('.message-list-container')?.getBoundingClientRect());
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -68,7 +69,7 @@ export default function MessageList({
   }
   
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 message-list-container border border-green-500">
       {messages && messages.map((message, index) => (
         <MessageItem 
           key={message.id || `message-${index}`}

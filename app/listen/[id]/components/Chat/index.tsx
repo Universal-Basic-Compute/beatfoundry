@@ -84,8 +84,8 @@ export default function Chat({
   };
   
   return (
-    <div className="w-full md:w-1/2 flex flex-col h-full relative overflow-hidden border border-border">
-      <div className="absolute inset-0 flex flex-col p-6">
+    <div className="w-full md:w-1/2 flex flex-col h-full relative overflow-hidden border-2 border-red-500 bg-background">
+      <div className="absolute inset-0 flex flex-col p-6 z-10">
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center">
             <h2 className="text-2xl font-bold text-foreground">Chat with {foundry?.name || 'AI Musician'}</h2>

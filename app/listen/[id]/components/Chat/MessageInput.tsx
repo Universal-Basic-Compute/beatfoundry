@@ -28,7 +28,7 @@ export default function MessageInput({
   };
   
   return (
-    <div className="absolute bottom-6 left-6 right-6 z-10">
+    <div className="absolute bottom-6 left-6 right-6 z-20 border-2 border-yellow-500">
       <form onSubmit={handleSendMessage} className="flex flex-col">
         <div className="flex rounded-xl overflow-hidden border border-border shadow-sm focus-within:ring-2 focus-within:ring-primary/50 transition-all bg-background">
           <input
