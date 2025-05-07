@@ -84,72 +84,73 @@ export default function Chat({
   };
   
   return (
-    <div className="w-full md:w-1/2 flex flex-col h-full relative overflow-hidden border-2 border-red-500 bg-background">
-      <div className="absolute inset-0 flex flex-col p-6 z-10">
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center">
-            <h2 className="text-2xl font-bold text-foreground">Chat with {foundry?.name || 'AI Musician'}</h2>
-            
-            <div className="relative ml-2 group">
-              <button 
-                className="w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xs font-bold"
-                aria-label="Information"
-              >
-                i
-              </button>
-              <div className="absolute left-0 bottom-full mb-2 w-64 p-3 bg-card rounded-lg shadow-lg text-xs z-10 hidden group-hover:block border border-border">
-                <p className="mb-2 font-semibold">How to use:</p>
-                <p className="mb-2 text-muted-foreground">1. Use <strong>Send</strong> to chat with the AI and guide its artistic direction.</p>
-                <p className="text-muted-foreground">2. Use <strong>Create Track</strong> to generate music based on your prompt.</p>
-              </div>
+    <div className="w-full md:w-1/2 flex flex-col h-[calc(100vh-80px)] border-2 border-red-500 bg-background">
+      {/* En-tête du chat */}
+      <div className="flex justify-between items-center p-6">
+        <div className="flex items-center">
+          <h2 className="text-2xl font-bold text-foreground">Chat with {foundry?.name || 'AI Musician'}</h2>
+          
+          <div className="relative ml-2 group">
+            <button 
+              className="w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xs font-bold"
+              aria-label="Information"
+            >
+              i
+            </button>
+            <div className="absolute left-0 bottom-full mb-2 w-64 p-3 bg-card rounded-lg shadow-lg text-xs z-10 hidden group-hover:block border border-border">
+              <p className="mb-2 font-semibold">How to use:</p>
+              <p className="mb-2 text-muted-foreground">1. Use <strong>Send</strong> to chat with the AI and guide its artistic direction.</p>
+              <p className="text-muted-foreground">2. Use <strong>Create Track</strong> to generate music based on your prompt.</p>
             </div>
           </div>
+        </div>
+        
+        <div className="relative">
+          <button 
+            onClick={() => setShowOptions(!showOptions)}
+            className="p-2 rounded-full bg-background hover:bg-muted transition-colors"
+            aria-label="Options"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="1"></circle>
+              <circle cx="19" cy="12" r="1"></circle>
+              <circle cx="5" cy="12" r="1"></circle>
+            </svg>
+          </button>
           
-          <div className="relative">
-            <button 
-              onClick={() => setShowOptions(!showOptions)}
-              className="p-2 rounded-full bg-background hover:bg-muted transition-colors"
-              aria-label="Options"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="1"></circle>
-                <circle cx="19" cy="12" r="1"></circle>
-                <circle cx="5" cy="12" r="1"></circle>
-              </svg>
-            </button>
-            
-            {/* Options menu */}
-            {showOptions && (
-              <OptionsMenu 
-                instrumental={instrumental}
-                setInstrumental={setInstrumental}
-                autonomousMode={autonomousMode}
-                setAutonomousMode={setAutonomousMode}
-              />
-            )}
-          </div>
+          {/* Options menu */}
+          {showOptions && (
+            <OptionsMenu 
+              instrumental={instrumental}
+              setInstrumental={setInstrumental}
+              autonomousMode={autonomousMode}
+              setAutonomousMode={setAutonomousMode}
+            />
+          )}
         </div>
-        
-        {error && (
-          <div className="bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 p-3 rounded-lg mb-4">
-            {error}
-          </div>
-        )}
-        
-        {/* Message container */}
-        <div className="flex-1 overflow-y-auto bg-black/5 dark:bg-white/5 rounded-xl p-4 custom-scrollbar mb-20">
-          <MessageList 
-            messages={messages} 
-            loading={loading} 
-            sending={sending} 
-            foundry={foundry} 
-            thoughts={thoughts}
-            thinking={thinking}
-          />
-          <div ref={messagesEndRef} />
+      </div>
+      
+      {error && (
+        <div className="bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 p-3 mx-6 rounded-lg mb-4">
+          {error}
         </div>
-        
-        {/* Message input */}
+      )}
+      
+      {/* Corps du chat - utilise flex-1 pour prendre tout l'espace disponible */}
+      <div className="flex-1 overflow-y-auto bg-black/5 dark:bg-white/5 rounded-xl p-4 mx-6 custom-scrollbar mb-20">
+        <MessageList 
+          messages={messages} 
+          loading={loading} 
+          sending={sending} 
+          foundry={foundry} 
+          thoughts={thoughts}
+          thinking={thinking}
+        />
+        <div ref={messagesEndRef} />
+      </div>
+      
+      {/* Zone de saisie de message - position fixe en bas */}
+      <div className="p-6 pt-0 mt-auto">
         <MessageInput 
           newMessage={newMessage}
           setNewMessage={setNewMessage}
