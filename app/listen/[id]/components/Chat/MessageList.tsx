@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import MessageItem from './MessageItem';
 import ThinkingIndicator from './ThinkingIndicator';
 
@@ -34,9 +34,17 @@ export default function MessageList({
   thoughts,
   thinking 
 }: MessageListProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  
+  // Use useEffect to access the DOM safely on the client side
+  useEffect(() => {
+    if (containerRef.current) {
+      console.log('MessageList component dimensions:', containerRef.current.getBoundingClientRect());
+    }
+  }, [messages]); // Log dimensions when messages change
+  
   console.log('MessageList rendering with messages:', messages);
   console.log('MessageList rendering with thoughts:', thoughts);
-  console.log('MessageList component dimensions:', document.querySelector('.message-list-container')?.getBoundingClientRect());
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -69,7 +77,7 @@ export default function MessageList({
   }
   
   return (
-    <div className="space-y-4 message-list-container border border-green-500">
+    <div className="space-y-4 message-list-container border border-green-500" ref={containerRef}>
       {messages && messages.map((message, index) => (
         <MessageItem 
           key={message.id || `message-${index}`}
