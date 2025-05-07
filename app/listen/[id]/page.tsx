@@ -1,162 +1,60 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import Link from 'next/link';
-import Image from 'next/image';
-import ReactMarkdown from 'react-markdown';
-
-// Debounce utility to prevent multiple track creations
-const useDebounce = (func: Function, delay: number) => {
-  const debounceRef = useRef<NodeJS.Timeout | null>(null);
-  
-  return (...args: any[]) => {
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
-    }
-    
-    debounceRef.current = setTimeout(() => {
-      func(...args);
-      debounceRef.current = null;
-    }, delay);
-  };
-};
-
-type Message = {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  timestamp: string;
-};
-
-type Foundry = {
-  id: string;
-  name: string;
-  description: string;
-};
-
-type Track = {
-  id: string;
-  name: string;
-  prompt: string;
-  lyrics: string;
-  url: string;
-  cover?: string;
-  createdAt: string;
-  foundryId: string;
-  reactions?: {
-    '⭐'?: number;
-    '🎵'?: number;
-    '🥁'?: number;
-    '🔊'?: number;
-    '📝'?: number;
-    '❓'?: number;
-    '💡'?: number;
-    '🔁'?: number;
-    '🌟'?: number;
-    '📈'?: number;
-    '❌'?: number;
-  };
-  totalReactions?: number;
-};
+import Header from './components/Header';
+import MusicPlayer from './components/MusicPlayer';
+import Chat from './components/Chat';
+import { useFoundry, useTracks, useMessages, useThinking } from './hooks';
 
 export default function ListenPage(): JSX.Element {
   const params = useParams();
   const foundryId = params.id as string;
   
-  const [foundry, setFoundry] = useState<Foundry | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [newMessage, setNewMessage] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [sending, setSending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  // Add a ref to track the last initiative we processed
-  const lastInitiativeRef = useRef<string | null>(null);
-  // Track multiple pending generations instead of a single one
-  const [pendingGenerations, setPendingGenerations] = useState<Array<{
-    id: string;
-    taskId: string;
-    title: string;
-    status: string;
-    createdAt: string;
-  }>>([]);
-  
-  // Reference to store all polling intervals
-  const intervalsRef = useRef<{[key: string]: NodeJS.Timeout}>({});
+  // State for options menu
   const [showOptions, setShowOptions] = useState(false);
   const [instrumental, setInstrumental] = useState(false);
-  const [trackMenuOpen, setTrackMenuOpen] = useState<string | null>(null);
-  const [expandedTracks, setExpandedTracks] = useState<Set<string>>(new Set());
-  const [showReactionPopup, setShowReactionPopup] = useState<string | null>(null);
-  
-  // Define the reaction types and their descriptions
-  const reactionTypes = [
-    { emoji: '⭐', description: 'Quality rating (general excellence)' },
-    { emoji: '🎵', description: 'Melody focus (strong melodic elements)' },
-    { emoji: '🥁', description: 'Rhythm focus (strong beat/percussion)' },
-    { emoji: '🔊', description: 'Production quality (sound design/mixing)' },
-    { emoji: '📝', description: 'Needs work/revision (constructive criticism)' },
-    { emoji: '❓', description: 'Confusion/question (something doesn\'t work)' },
-    { emoji: '💡', description: 'Innovative idea (creative or novel approach)' },
-    { emoji: '🔁', description: 'Repetitive (could use more variation)' },
-    { emoji: '🌟', description: 'Standout track (exceptional compared to others)' },
-    { emoji: '📈', description: 'Showing improvement/growth (evolutionary progress)' },
-    { emoji: '❌', description: 'Bad track/has errors' }
-  ];
-  
-  // Function to add a reaction
-  const addReaction = async (trackId: string, reaction: string) => {
-    try {
-      const response = await fetch(`/api/foundries/${foundryId}/tracks/${trackId}/reactions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ reaction }),
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to add reaction');
-      }
-      
-      const updatedReactions = await response.json();
-      
-      // Update the track in the local state
-      setTracks(prevTracks => 
-        prevTracks.map(track => 
-          track.id === trackId 
-            ? { ...track, reactions: updatedReactions } 
-            : track
-        )
-      );
-      
-      // Close the reaction popup
-      setShowReactionPopup(null);
-    } catch (error) {
-      console.error('Error adding reaction:', error);
-    }
-  };
-  
-  // Add state for autonomous thinking
   const [autonomousMode, setAutonomousMode] = useState(false);
-  const [thinking, setThinking] = useState(false);
-  const [thoughts, setThoughts] = useState<Array<{
-    step: string;
-    content: any;
-    timestamp?: string;
-  }>>([]);
-  const [eventSource, setEventSource] = useState<EventSource | null>(null);
   
-  // Add state for tracks
-  const [tracks, setTracks] = useState<Track[]>([]);
-  const [loadingTracks, setLoadingTracks] = useState(true);
-  const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [duration, setDuration] = useState(0);
-  const [currentTime, setCurrentTime] = useState(0);
+  // Use custom hooks to manage data and state
+  const { foundry, loading: loadingFoundry, error: foundryError } = useFoundry(foundryId);
+  const { 
+    tracks, 
+    currentTrack, 
+    setCurrentTrack,
+    isPlaying, 
+    setIsPlaying,
+    pendingGenerations,
+    createTrack,
+    addReaction,
+    loadingTracks 
+  } = useTracks(foundryId);
   
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const audioRef = useRef<HTMLAudioElement>(null);
+  const {
+    messages,
+    newMessage,
+    setNewMessage,
+    sending,
+    sendMessage,
+    loading: loadingMessages,
+    error: messagesError
+  } = useMessages(foundryId);
+  
+  const {
+    thinking,
+    thoughts,
+    triggerThinking,
+    createTrackFromThinking
+  } = useThinking(foundryId, instrumental, autonomousMode, createTrack);
+  
+  // Start/stop autonomous thinking when the toggle changes
+  useEffect(() => {
+    if (autonomousMode) {
+      triggerThinking();
+    }
+  }, [autonomousMode, triggerThinking]);
+  
+  const error = foundryError || messagesError;
   
   // Format time in MM:SS format
   const formatTime = (time: number) => {
@@ -1116,756 +1014,42 @@ export default function ListenPage(): JSX.Element {
   
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="bg-background border-b border-border p-4 sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto flex justify-between items-center">
-          <Link href="/" className="text-xl font-bold text-foreground flex items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary mr-2">
-              <path d="M9 18V5l12-2v13"></path>
-              <circle cx="6" cy="18" r="3"></circle>
-              <circle cx="18" cy="16" r="3"></circle>
-            </svg>
-            BeatFoundry
-          </Link>
-          {foundry && (
-            <div className="flex items-center">
-              <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center mr-2">
-                {foundry.name.charAt(0)}
-              </div>
-              <h1 className="text-xl font-semibold text-foreground">{foundry.name}</h1>
-            </div>
-          )}
-        </div>
-      </header>
+      <Header foundry={foundry} />
       
       <main className="flex-1 flex flex-col md:flex-row max-w-6xl mx-auto w-full h-[calc(100vh-80px)]">
         {/* Left side - Music Player */}
-        <div className="w-full md:w-1/2 p-6 border-r">
-          <div className="bg-gradient-to-br from-card to-card/80 text-card-foreground rounded-xl p-8 h-full flex flex-col shadow-md">
-            <h2 className="text-2xl font-bold mb-6 text-foreground">Music Player</h2>
-            
-            {loadingTracks ? (
-              <div className="flex-1 flex items-center justify-center">
-                <div className="flex flex-col items-center">
-                  <div className="relative w-12 h-12">
-                    <div className="absolute top-0 left-0 w-full h-full border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
-                  </div>
-                  <p className="mt-4 text-muted-foreground">Loading tracks...</p>
-                </div>
-              </div>
-            ) : tracks.length === 0 && pendingGenerations.length === 0 ? (
-              <div className="flex-1 flex items-center justify-center text-center">
-                <div>
-                  <div className="w-48 h-48 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto mb-6 flex items-center justify-center shadow-lg">
-                    <span className="text-5xl">🎵</span>
-                  </div>
-                  <p className="text-lg font-medium">No tracks yet</p>
-                  <p className="text-gray-600 dark:text-gray-400 mt-2">
-                    Use the "Create Track" button to generate music
-                  </p>
-                </div>
-              </div>
-            ) : pendingGenerations.length > 0 && !currentTrack ? (
-              <div className="flex-1 flex flex-col">
-                <div className="text-center mb-6">
-                  <div className="w-48 h-48 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto mb-6 flex items-center justify-center animate-pulse">
-                    <span className="text-4xl">🎵</span>
-                  </div>
-                  <p className="text-lg font-medium">Generating Music</p>
-                  <p className="text-gray-600 dark:text-gray-400">
-                    {pendingGenerations[0].title}
-                  </p>
-                  
-                  <div className="mt-6">
-                    <div className="space-y-4">
-                      {pendingGenerations.map(gen => (
-                        <div key={gen.id} className="bg-card/50 dark:bg-card/30 p-4 rounded-lg">
-                          <div className="flex justify-between items-center mb-2">
-                            <span className="font-medium">{gen.title}</span>
-                            <span className="text-xs px-2 py-1 rounded-full bg-primary/20 text-primary dark:bg-primary/30 dark:text-primary-foreground">
-                              {gen.status}
-                            </span>
-                          </div>
-                          <div className="w-full bg-muted dark:bg-muted/50 rounded-full h-2.5">
-                            <div 
-                              className={`h-2.5 rounded-full ${
-                                gen.status === 'SUCCESS' || gen.status === 'FIRST_SUCCESS' 
-                                  ? 'bg-success w-full' 
-                                  : gen.status.includes('FAILED') || gen.status === 'ERROR'
-                                    ? 'bg-destructive w-full'
-                                    : gen.status === 'INITIALIZING'
-                                      ? 'bg-primary animate-pulse w-1/4' // Show a shorter progress bar for initializing
-                                      : 'bg-accent animate-pulse w-full'
-                              }`}
-                            ></div>
-                          </div>
-                          <p className="text-xs mt-2 text-gray-500 dark:text-gray-400">
-                            {gen.status === 'INITIALIZING' && 'Preparing to generate music...'}
-                            {gen.status === 'PENDING' && 'Music generation in progress... (this may take a few minutes)'}
-                            {gen.status === 'TEXT_SUCCESS' && 'Lyrics generated, creating music...'}
-                            {gen.status === 'FIRST_SUCCESS' && 'First track generated, creating variations...'}
-                            {gen.status === 'SUCCESS' && 'Music generation complete!'}
-                            {['CREATE_TASK_FAILED', 'GENERATE_AUDIO_FAILED', 'CALLBACK_EXCEPTION', 'SENSITIVE_WORD_ERROR', 'ERROR'].includes(gen.status) && 
-                              `Music generation failed: ${gen.status}`}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="flex-1 flex flex-col">
-                <div className="flex-1 overflow-y-auto mb-4">
-                  {/* Show pending generations at the top if any exist */}
-                  {pendingGenerations.length > 0 && (
-                    <div className="mb-6 space-y-4">
-                      <h3 className="font-semibold">Generating Tracks</h3>
-                      {pendingGenerations.map(gen => (
-                        <div key={gen.id} className="bg-black/10 dark:bg-white/10 p-4 rounded-lg">
-                          <div className="flex justify-between items-center mb-2">
-                            <span className="font-medium">{gen.title}</span>
-                            <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                              {gen.status}
-                            </span>
-                          </div>
-                          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
-                            <div 
-                              className={`h-2.5 rounded-full ${
-                                gen.status === 'SUCCESS' || gen.status === 'FIRST_SUCCESS' 
-                                  ? 'bg-green-600 w-full' 
-                                  : gen.status.includes('FAILED') || gen.status === 'ERROR'
-                                    ? 'bg-red-600 w-full'
-                                    : gen.status === 'INITIALIZING'
-                                      ? 'bg-purple-600 animate-pulse w-1/4' // Show a shorter progress bar for initializing
-                                      : 'bg-blue-600 animate-pulse w-full'
-                              }`}
-                            ></div>
-                          </div>
-                          <p className="text-xs mt-2 text-gray-500 dark:text-gray-400">
-                            {gen.status === 'INITIALIZING' && 'Preparing to generate music...'}
-                            {gen.status === 'PENDING' && 'Music generation in progress... (this may take a few minutes)'}
-                            {gen.status === 'TEXT_SUCCESS' && 'Lyrics generated, creating music...'}
-                            {gen.status === 'FIRST_SUCCESS' && 'First track generated, creating variations...'}
-                            {gen.status === 'SUCCESS' && 'Music generation complete!'}
-                            {['CREATE_TASK_FAILED', 'GENERATE_AUDIO_FAILED', 'CALLBACK_EXCEPTION', 'SENSITIVE_WORD_ERROR', 'ERROR'].includes(gen.status) && 
-                              `Music generation failed: ${gen.status}`}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  
-                  <div className="text-center mb-6">
-                    <div className="relative w-48 h-48 mx-auto mb-8">
-                      <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-accent/20 rounded-full"></div>
-                      <div className="w-full h-full bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center shadow-lg overflow-hidden">
-                        {currentTrack?.cover ? (
-                          <Image 
-                            src={currentTrack.cover} 
-                            alt={currentTrack.name} 
-                            width={192} 
-                            height={192} 
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              console.error(`Error loading cover image: ${currentTrack.cover}`);
-                              // Remove the fallback image and let it fall through to the emoji
-                              e.currentTarget.style.display = 'none';
-                              e.currentTarget.parentElement.classList.add('flex', 'items-center', 'justify-center');
-                              e.currentTarget.parentElement.innerHTML = '<span class="text-5xl">🎵</span>';
-                            }}
-                          />
-                        ) : (
-                          <span className="text-5xl">🎵</span>
-                        )}
-                      </div>
-                      {/* Add a spinning animation when playing */}
-                      {isPlaying && (
-                        <div className="absolute inset-0 border-4 border-primary/30 border-t-primary rounded-full animate-spin" style={{ animationDuration: '4s' }}></div>
-                      )}
-                    </div>
-                    
-                    {/* Improved Now Playing section */}
-                    <div className="text-center mb-8">
-                      <p className="text-sm uppercase tracking-wider text-muted-foreground mb-1">Now Playing</p>
-                      <p className="text-xl font-bold text-foreground mb-1">{currentTrack?.name || 'Select a track'}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {currentTrack ? new Date(currentTrack.createdAt).toLocaleDateString() : ''}
-                      </p>
-                    </div>
-                    
-                    <div className="mt-6">
-                      {/* Improved progress bar */}
-                      <div className="flex items-center space-x-3 mb-6">
-                        <span className="text-xs font-medium">{formatTime(currentTime)}</span>
-                        <div className="relative flex-1 h-2 bg-muted/50 rounded-full overflow-hidden">
-                          <div 
-                            className="absolute top-0 left-0 h-full bg-gradient-to-r from-primary to-accent rounded-full"
-                            style={{ width: `${(currentTime / (duration || 1)) * 100}%` }}
-                          ></div>
-                        </div>
-                        <span className="text-xs font-medium">{formatTime(duration)}</span>
-                      </div>
-                      
-                      {/* Improved playback controls */}
-                      <div className="flex justify-center space-x-6 mb-8">
-                        <button 
-                          onClick={playPreviousTrack}
-                          className="p-4 rounded-full bg-primary/10 hover:bg-primary/20 text-primary transition-colors"
-                          disabled={!currentTrack}
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <polygon points="19 20 9 12 19 4 19 20"></polygon>
-                            <line x1="5" y1="19" x2="5" y2="5"></line>
-                          </svg>
-                        </button>
-                        <button 
-                          onClick={togglePlayPause}
-                          className="p-5 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground transition-colors shadow-md"
-                          disabled={!currentTrack}
-                        >
-                          {isPlaying ? (
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <rect x="6" y="4" width="4" height="16"></rect>
-                              <rect x="14" y="4" width="4" height="16"></rect>
-                            </svg>
-                          ) : (
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                            </svg>
-                          )}
-                        </button>
-                        <button 
-                          onClick={playNextTrack}
-                          className="p-4 rounded-full bg-primary/10 hover:bg-primary/20 text-primary transition-colors"
-                          disabled={!currentTrack}
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <polygon points="5 4 15 12 5 20 5 4"></polygon>
-                            <line x1="19" y1="5" x2="19" y2="19"></line>
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <h3 className="text-xl font-bold mb-4 flex items-center">
-                    Track List
-                    <span className="ml-2 text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
-                      {tracks.length}
-                    </span>
-                  </h3>
-                  
-                  <div className="space-y-3">
-                    {tracks.map((track, index) => (
-                      <div 
-                        key={track.id || `track-${index}`}
-                        className={`p-4 rounded-xl transition-all ${
-                          currentTrack?.id === track.id 
-                            ? 'bg-primary/10 border-l-4 border-primary' 
-                            : 'hover:bg-black/5 dark:hover:bg-white/5 border-l-4 border-transparent'
-                        }`}
-                      >
-                        <div className="flex justify-between items-start">
-                          <div 
-                            className="flex-1 cursor-pointer flex items-center" 
-                            onClick={() => playTrack(track)}
-                          >
-                            <div className="w-10 h-10 rounded-md overflow-hidden mr-3 flex-shrink-0">
-                              {track.cover ? (
-                                <Image 
-                                  src={track.cover} 
-                                  alt={track.name} 
-                                  width={40} 
-                                  height={40} 
-                                  className="w-full h-full object-cover"
-                                  onError={(e) => {
-                                    console.error(`Error loading cover image: ${track.cover}`);
-                                    // Remove the fallback image and let it fall through to the emoji
-                                    e.currentTarget.style.display = 'none';
-                                    e.currentTarget.parentElement.classList.add('bg-primary/10');
-                                    e.currentTarget.parentElement.innerHTML = '<span class="text-lg">🎵</span>';
-                                  }}
-                                />
-                              ) : (
-                                <div className="w-full h-full bg-primary/10 flex items-center justify-center">
-                                  <span className="text-lg">🎵</span>
-                                </div>
-                              )}
-                            </div>
-                            <div>
-                              <div className="font-medium flex items-center">
-                                {currentTrack?.id === track.id && (
-                                  <span className="mr-2 text-primary">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none">
-                                      <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                                    </svg>
-                                  </span>
-                                )}
-                                {track.name}
-                              </div>
-                              <div className="text-sm text-muted-foreground mt-1">
-                                {new Date(track.createdAt).toLocaleDateString()}
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center space-x-1">
-                            {/* Add reaction button */}
-                            <button 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setShowReactionPopup(showReactionPopup === track.id ? null : track.id);
-                              }}
-                              className="p-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
-                              aria-label="Add reaction"
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
-                                <line x1="9" y1="9" x2="9.01" y2="9"></line>
-                                <line x1="15" y1="9" x2="15.01" y2="9"></line>
-                              </svg>
-                            </button>
-        
-                            <button 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleTrackExpansion(track.id);
-                              }}
-                              className="p-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
-                              aria-label={expandedTracks.has(track.id) ? "Collapse track details" : "Expand track details"}
-                            >
-                              <svg 
-                                xmlns="http://www.w3.org/2000/svg" 
-                                width="16" 
-                                height="16" 
-                                viewBox="0 0 24 24" 
-                                fill="none" 
-                                stroke="currentColor" 
-                                strokeWidth="2" 
-                                strokeLinecap="round" 
-                                strokeLinejoin="round"
-                                className={`transition-transform duration-200 ${expandedTracks.has(track.id) ? 'rotate-180' : ''}`}
-                              >
-                                <polyline points="6 9 12 15 18 9"></polyline>
-                              </svg>
-                            </button>
-                            
-                            {/* Track options menu */}
-                            <div className="relative">
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setTrackMenuOpen(trackMenuOpen === track.id ? null : track.id);
-                                }}
-                                className="p-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
-                                aria-label="Track options"
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                  <circle cx="12" cy="12" r="1"></circle>
-                                  <circle cx="12" cy="5" r="1"></circle>
-                                  <circle cx="12" cy="19" r="1"></circle>
-                                </svg>
-                              </button>
-                              
-                              {trackMenuOpen === track.id && (
-                                <div className="absolute right-0 mt-1 w-36 rounded-md shadow-lg bg-background border border-border z-10 track-menu">
-                                  <div className="py-1" role="menu" aria-orientation="vertical">
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleDownloadTrack(track);
-                                        setTrackMenuOpen(null);
-                                      }}
-                                      className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-muted"
-                                      role="menuitem"
-                                    >
-                                      Download
-                                    </button>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-    
-                        {/* Display reactions if any */}
-                        {track.reactions && Object.keys(track.reactions).length > 0 && (
-                          <div className="flex flex-wrap gap-2 mt-2">
-                            {Object.entries(track.reactions).map(([emoji, count]) => (
-                              <div 
-                                key={emoji} 
-                                className={`flex items-center px-2 py-1 rounded-full text-xs ${
-                                  emoji === '❌' 
-                                    ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200' 
-                                    : 'bg-black/5 dark:bg-white/5'
-                                }`}
-                                title={reactionTypes.find(r => r.emoji === emoji)?.description || ''}
-                              >
-                                <span className="mr-1">{emoji}</span>
-                                <span>{count}</span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-    
-                        {/* Reaction popup */}
-                        {showReactionPopup === track.id && (
-                          <div className="absolute z-20 bg-background shadow-lg rounded-lg p-2 border border-border mt-2 animate-fadeIn reaction-popup">
-                            <div className="text-xs font-medium mb-2 text-muted-foreground">Add reaction:</div>
-                            <div className="grid grid-cols-5 gap-2">
-                              {reactionTypes.map(({ emoji, description }) => (
-                                <button
-                                  key={emoji}
-                                  onClick={() => addReaction(track.id, emoji)}
-                                  className="w-8 h-8 flex items-center justify-center hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-colors"
-                                  title={description}
-                                >
-                                  {emoji}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-    
-                        {/* Expanded track details with animation */}
-                        {expandedTracks.has(track.id) && (
-                          <div 
-                            className="mt-3 text-sm bg-black/5 dark:bg-white/5 p-4 rounded-lg animate-fadeIn"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            {track.prompt && (
-                              <div className="mb-4">
-                                <h4 className="font-semibold mb-2 text-primary">Prompt</h4>
-                                <p className="text-foreground whitespace-pre-wrap">{track.prompt}</p>
-                              </div>
-                            )}
-                            
-                            {track.lyrics && track.lyrics !== track.prompt && (
-                              <div>
-                                <h4 className="font-semibold mb-2 text-primary">Lyrics</h4>
-                                <p className="text-foreground whitespace-pre-wrap">{track.lyrics}</p>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                
-                {/* Hidden audio element */}
-                <audio 
-                  ref={audioRef}
-                  onEnded={playNextTrack}
-                  onPlay={() => setIsPlaying(true)}
-                  onPause={() => setIsPlaying(false)}
-                  onTimeUpdate={() => setCurrentTime(audioRef.current?.currentTime || 0)}
-                  onDurationChange={() => setDuration(audioRef.current?.duration || 0)}
-                  onLoadedMetadata={() => setDuration(audioRef.current?.duration || 0)}
-                />
-              </div>
-            )}
-          </div>
-        </div>
+        <MusicPlayer
+          tracks={tracks}
+          currentTrack={currentTrack}
+          setCurrentTrack={setCurrentTrack}
+          isPlaying={isPlaying}
+          setIsPlaying={setIsPlaying}
+          pendingGenerations={pendingGenerations}
+          addReaction={addReaction}
+          loading={loadingTracks}
+        />
         
         {/* Right side - Chat */}
-        <div className="w-full md:w-1/2 flex flex-col h-full relative overflow-hidden">
-          <div className="absolute inset-0 flex flex-col p-6">
-            <div className="flex justify-between items-center mb-6">
-              <div className="flex items-center">
-                <h2 className="text-2xl font-bold text-foreground">Chat with {foundry?.name || 'AI Musician'}</h2>
-                
-                <div className="relative ml-2 group">
-                  <button 
-                    className="w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xs font-bold"
-                    aria-label="Information"
-                  >
-                    i
-                  </button>
-                  <div className="absolute left-0 bottom-full mb-2 w-64 p-3 bg-card rounded-lg shadow-lg text-xs z-10 hidden group-hover:block border border-border">
-                    <p className="mb-2 font-semibold">How to use:</p>
-                    <p className="mb-2 text-muted-foreground">1. Use <strong>Send</strong> to chat with the AI and guide its artistic direction.</p>
-                    <p className="text-muted-foreground">2. Use <strong>Create Track</strong> to generate music based on your prompt.</p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="relative">
-                <button 
-                  onClick={() => setShowOptions(!showOptions)}
-                  className="p-2 rounded-full bg-background hover:bg-muted transition-colors"
-                  aria-label="Options"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="1"></circle>
-                    <circle cx="19" cy="12" r="1"></circle>
-                    <circle cx="5" cy="12" r="1"></circle>
-                  </svg>
-                </button>
-                
-                {/* Improved options menu */}
-                {showOptions && (
-                  <div className="absolute right-0 mt-2 w-64 rounded-lg shadow-lg bg-background border border-border z-10 options-menu animate-fadeIn">
-                    <div className="py-2" role="menu" aria-orientation="vertical">
-                      <div className="px-4 py-3 text-sm">
-                        <div className="flex items-center justify-between">
-                          <span className="font-medium">Instrumental Only</span>
-                          <button 
-                            onClick={() => setInstrumental(!instrumental)}
-                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${instrumental ? 'bg-primary' : 'bg-muted'}`}
-                          >
-                            <span 
-                              className={`inline-block h-4 w-4 transform rounded-full bg-background shadow-md transition-transform duration-200 ${instrumental ? 'translate-x-6' : 'translate-x-1'}`} 
-                            />
-                          </button>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {instrumental ? 'Generate music without lyrics' : 'Generate music with lyrics'}
-                        </p>
-                      </div>
-                      
-                      <div className="px-4 py-3 text-sm border-t border-border">
-                        <div className="flex items-center justify-between">
-                          <span className="font-medium">Create Autonomously</span>
-                          <button 
-                            onClick={() => setAutonomousMode(!autonomousMode)}
-                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${autonomousMode ? 'bg-primary' : 'bg-muted'}`}
-                          >
-                            <span 
-                              className={`inline-block h-4 w-4 transform rounded-full bg-background shadow-md transition-transform duration-200 ${autonomousMode ? 'translate-x-6' : 'translate-x-1'}`} 
-                            />
-                          </button>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {autonomousMode ? 'AI will generate thoughts and music autonomously' : 'AI will respond to your messages'}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-            
-            {error && (
-              <div className="bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 p-3 rounded-lg mb-4">
-                {error}
-              </div>
-            )}
-            
-            {/* Improved message container with proper spacing for fixed input */}
-            <div className="flex-1 overflow-y-auto bg-black/5 dark:bg-white/5 rounded-xl p-4 custom-scrollbar mb-20">
-            {loading ? (
-              <div className="flex items-center justify-center h-full">
-                <div className="flex flex-col items-center">
-                  <div className="relative w-12 h-12">
-                    <div className="absolute top-0 left-0 w-full h-full border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
-                  </div>
-                  <p className="mt-4 text-muted-foreground">Loading conversation...</p>
-                </div>
-              </div>
-            ) : messages.length === 0 ? (
-              <div className="flex items-center justify-center h-full text-center">
-                <div>
-                  <div className="w-16 h-16 bg-primary/10 rounded-full mx-auto mb-4 flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
-                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                    </svg>
-                  </div>
-                  <p className="text-lg font-medium mb-2">No messages yet</p>
-                  <p className="text-muted-foreground">
-                    Start a conversation with {foundry?.name || 'the AI musician'}
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {messages.map((message, index) => {
-                  // Find any thoughts that might be related to this message
-                  const messageThoughts = thinking && message.role === 'assistant' && index === messages.length - 1 
-                    ? thoughts 
-                    : [];
-                    
-                  return (
-                    <div key={message.id || `message-${index}`} className="animate-fadeIn">
-                      <div 
-                        className={`p-4 rounded-xl ${
-                          message.role === 'user' 
-                            ? 'bg-primary text-primary-foreground ml-12' 
-                            : 'bg-muted dark:bg-muted/40 mr-12'
-                        }`}
-                      >
-                        <div className="flex items-center mb-2">
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-2 ${
-                            message.role === 'user' 
-                              ? 'bg-primary-foreground/20 text-primary-foreground' 
-                              : 'bg-primary/10 text-primary'
-                          }`}>
-                            {message.role === 'user' ? 'Y' : 'A'}
-                          </div>
-                          <div className="font-medium text-sm">
-                            {message.role === 'user' ? 'You' : foundry?.name || 'AI Musician'}
-                          </div>
-                          <div className="text-xs opacity-70 ml-auto">
-                            {new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                          </div>
-                        </div>
-                        <div className={message.role === 'user' ? 'text-sm' : 'prose dark:prose-invert prose-sm max-w-none text-sm'}>
-                          {message.role === 'user' ? (
-                            <div>{message.content}</div>
-                          ) : (
-                            <ReactMarkdown>{message.content}</ReactMarkdown>
-                          )}
-                        </div>
-                      </div>
-                      
-                      {/* Improved thoughts display */}
-                      {message.role === 'assistant' && thoughts.length > 0 && index === messages.length - 1 && (
-                        <div className="ml-8 mr-12 mt-2 mb-4 text-xs space-y-2 animate-fadeIn">
-                          <div className="text-muted-foreground font-medium uppercase tracking-wider text-[10px] ml-2">
-                            AI Thoughts
-                          </div>
-                          {thoughts.map((thought, i) => {
-                            if (thought.step === 'kin_response') return null;
-                            
-                            return (
-                              <div key={`thought-${i}`} className="bg-muted/50 dark:bg-muted/20 p-3 rounded-lg border-l-2 border-primary/50">
-                                <div className="font-medium mb-1 text-primary/80">
-                                  {thought.step === 'keywords' ? 'Keywords' : 
-                                   thought.step === 'dream' ? 'Dream' : 
-                                   thought.step === 'daydreaming' ? 'Daydreaming' : 
-                                   thought.step === 'initiative' ? 'Initiative' : 
-                                   ((step: string) => step.charAt(0).toUpperCase() + step.slice(1))(thought.step)}
-                                </div>
-                                {thought.step === 'keywords' ? (
-                                  <div>
-                                    {thought.content.relevant_keywords && (
-                                      <div className="mb-1"><span className="font-medium text-muted-foreground">Keywords:</span> {thought.content.relevant_keywords.join(', ')}</div>
-                                    )}
-                                    {thought.content.emotions && (
-                                      <div><span className="font-medium text-muted-foreground">Emotions:</span> {thought.content.emotions.join(', ')}</div>
-                                    )}
-                                  </div>
-                                ) : (
-                                  <div className="text-foreground">{typeof thought.content === 'string' 
-                                    ? thought.content 
-                                    : JSON.stringify(thought.content)}</div>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-                
-                {/* Improved typing indicator */}
-                {sending && (
-                  <div className="bg-muted dark:bg-muted/40 p-4 rounded-xl mr-12 animate-fadeIn">
-                    <div className="flex items-center mb-2">
-                      <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center mr-2">
-                        A
-                      </div>
-                      <div className="font-medium text-sm">
-                        {foundry?.name || 'AI Musician'}
-                      </div>
-                    </div>
-                    <div className="flex space-x-2 items-center h-6 pl-2">
-                      <span className="w-2 h-2 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: '0ms' }}></span>
-                      <span className="w-2 h-2 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: '150ms' }}></span>
-                      <span className="w-2 h-2 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: '300ms' }}></span>
-                    </div>
-                  </div>
-                )}
-                
-                {/* Improved thinking indicator */}
-                {autonomousMode && thinking && (
-                  <div className="bg-muted dark:bg-muted/40 p-4 rounded-xl mr-12 animate-fadeIn">
-                    <div className="flex items-center mb-2">
-                      <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center mr-2">
-                        A
-                      </div>
-                      <div className="font-medium text-sm">
-                        {foundry?.name || 'AI Musician'} is thinking...
-                      </div>
-                    </div>
-                    <div className="flex space-x-2 items-center h-6 pl-2">
-                      <span className="w-2 h-2 rounded-full bg-primary/60 animate-pulse" style={{ animationDelay: '0ms' }}></span>
-                      <span className="w-2 h-2 rounded-full bg-primary/60 animate-pulse" style={{ animationDelay: '150ms' }}></span>
-                      <span className="w-2 h-2 rounded-full bg-primary/60 animate-pulse" style={{ animationDelay: '300ms' }}></span>
-                    </div>
-                    
-                    {/* Show the most recent thought */}
-                    {thoughts.length > 0 && (
-                      <div className="mt-3 text-xs bg-black/5 dark:bg-white/5 p-3 rounded-lg animate-fadeIn">
-                        <div className="font-medium mb-1 text-primary/80">
-                          Latest thought: {thoughts[thoughts.length - 1].step === 'keywords' ? 'Keywords' : 
-                           thoughts[thoughts.length - 1].step === 'dream' ? 'Dream' : 
-                           thoughts[thoughts.length - 1].step === 'daydreaming' ? 'Daydreaming' : 
-                           thoughts[thoughts.length - 1].step === 'initiative' ? 'Initiative' : 
-                           ((step: string) => step.charAt(0).toUpperCase() + step.slice(1))(thoughts[thoughts.length - 1].step)}
-                        </div>
-                        {thoughts[thoughts.length - 1].step === 'keywords' ? (
-                          <div>
-                            {thoughts[thoughts.length - 1].content.relevant_keywords && (
-                              <div><span className="font-medium text-muted-foreground">Keywords:</span> {thoughts[thoughts.length - 1].content.relevant_keywords.join(', ')}</div>
-                            )}
-                          </div>
-                        ) : (
-                          <div className="text-foreground line-clamp-2">{typeof thoughts[thoughts.length - 1].content === 'string' 
-                            ? thoughts[thoughts.length - 1].content 
-                            : JSON.stringify(thoughts[thoughts.length - 1].content)}</div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
-                <div ref={messagesEndRef} />
-              </div>
-            )}
-          </div>
-          
-          {/* Fixed position message input at the bottom */}
-          <div className="absolute bottom-6 left-6 right-6 z-10">
-            <form onSubmit={handleSendMessage} className="flex flex-col">
-              <div className="flex rounded-xl overflow-hidden border border-border shadow-sm focus-within:ring-2 focus-within:ring-primary/50 transition-all bg-background">
-                <input
-                  type="text"
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Type your message..."
-                  className="flex-1 p-4 bg-background text-foreground focus:outline-none"
-                  disabled={sending}
-                />
-                <button
-                  type="submit"
-                  className="bg-foreground text-background px-5 py-4 font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center"
-                  disabled={sending || !newMessage.trim()}
-                >
-                  <span className="mr-2">Send</span>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="22" y1="2" x2="11" y2="13"></line>
-                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                  </svg>
-                </button>
-                <button
-                  type="button"
-                  onClick={handleCreateTrack}
-                  className="bg-primary text-primary-foreground px-5 py-4 font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center"
-                  disabled={sending || !newMessage.trim()}
-                >
-                  <span className="mr-2">{createButtonText}</span>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M9 18V5l12-2v13"></path>
-                    <circle cx="6" cy="18" r="3"></circle>
-                    <circle cx="18" cy="16" r="3"></circle>
-                  </svg>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <Chat
+          foundry={foundry}
+          messages={messages}
+          newMessage={newMessage}
+          setNewMessage={setNewMessage}
+          sending={sending}
+          sendMessage={sendMessage}
+          loading={loadingMessages}
+          error={error}
+          showOptions={showOptions}
+          setShowOptions={setShowOptions}
+          instrumental={instrumental}
+          setInstrumental={setInstrumental}
+          autonomousMode={autonomousMode}
+          setAutonomousMode={setAutonomousMode}
+          thinking={thinking}
+          thoughts={thoughts}
+          createTrack={createTrack}
+          createTrackFromThinking={createTrackFromThinking}
+        />
       </main>
     </div>
   );
