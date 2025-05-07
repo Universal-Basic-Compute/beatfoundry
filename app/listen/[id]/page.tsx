@@ -7,7 +7,7 @@ import MusicPlayer from './components/MusicPlayer';
 import Chat from './components/Chat';
 import { useFoundry, useTracks, useMessages, useThinking } from './hooks';
 
-export default function ListenPage(): JSX.Element {
+export default function ListenPage(): React.ReactNode {
   const params = useParams();
   const foundryId = params.id as string;
   
