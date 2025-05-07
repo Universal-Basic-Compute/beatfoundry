@@ -13,7 +13,8 @@ type ThinkingIndicatorProps = {
   thoughts: Thought[];
 };
 
-export default function ThinkingIndicator({ foundry, thoughts }: ThinkingIndicatorProps) {
+export default function ThinkingIndicator({ foundry, thoughts = [] }: ThinkingIndicatorProps) {
+  console.log('ThinkingIndicator rendering with thoughts:', thoughts);
   return (
     <div className="bg-muted dark:bg-muted/40 p-4 rounded-xl mr-12 animate-fadeIn">
       <div className="flex items-center mb-2">

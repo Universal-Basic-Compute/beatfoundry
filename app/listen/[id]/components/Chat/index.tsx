@@ -66,6 +66,9 @@ export default function Chat({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, thoughts]);
   
+  console.log('Chat component rendering with messages:', messages);
+  console.log('Chat component rendering with thoughts:', thoughts);
+  
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -81,7 +84,7 @@ export default function Chat({
   };
   
   return (
-    <div className="w-full md:w-1/2 flex flex-col h-full relative overflow-hidden">
+    <div className="w-full md:w-1/2 flex flex-col h-full relative overflow-hidden border border-border">
       <div className="absolute inset-0 flex flex-col p-6">
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center">

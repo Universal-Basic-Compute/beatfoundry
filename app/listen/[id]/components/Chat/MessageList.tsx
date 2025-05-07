@@ -34,6 +34,8 @@ export default function MessageList({
   thoughts,
   thinking 
 }: MessageListProps) {
+  console.log('MessageList rendering with messages:', messages);
+  console.log('MessageList rendering with thoughts:', thoughts);
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -67,12 +69,12 @@ export default function MessageList({
   
   return (
     <div className="space-y-4">
-      {messages.map((message, index) => (
+      {messages && messages.map((message, index) => (
         <MessageItem 
           key={message.id || `message-${index}`}
           message={message}
           foundry={foundry}
-          thoughts={thoughts}
+          thoughts={thoughts || []}
           isLatestAssistantMessage={message.role === 'assistant' && index === messages.length - 1}
         />
       ))}

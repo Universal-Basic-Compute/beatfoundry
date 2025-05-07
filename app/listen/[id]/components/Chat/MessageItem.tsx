@@ -25,6 +25,10 @@ export default function MessageItem({ message, foundry, thoughts, isLatestAssist
   // Find any thoughts that might be related to this message
   const messageThoughts = isLatestAssistantMessage ? thoughts : [];
   
+  console.log('MessageItem rendering message:', message);
+  console.log('MessageItem isLatestAssistantMessage:', isLatestAssistantMessage);
+  console.log('MessageItem thoughts available:', thoughts?.length || 0);
+  
   return (
     <div className="animate-fadeIn">
       <div 
