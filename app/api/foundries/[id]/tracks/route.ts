@@ -126,8 +126,6 @@ export async function POST(request, { params }) {
     
     // Parse the response as JSON parameters
     let musicParams;
-    
-    let musicParams;
     try {
       console.log(`[TRACKS] Parsing music parameters from response content:`, messageResponse.content);
       
