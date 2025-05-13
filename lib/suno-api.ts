@@ -20,8 +20,8 @@ type SunoGenerateResponse = {
 };
 
 export async function generateMusic(
-  prompt: string,
-  style: string,
+  lyrics: string,  // This will be the prompt parameter for non-instrumental tracks
+  style: string,   // This will contain style, sonorities, emotions (up to 1000 chars)
   title: string,
   instrumental: boolean = false,
   callbackUrl: string
@@ -41,15 +41,21 @@ export async function generateMusic(
   }
   
   console.log(`[SUNO] Callback URL: ${finalCallbackUrl}`);
-  console.log(`[SUNO] Prompt/Lyrics: "${prompt.substring(0, 100)}${prompt.length > 100 ? '...' : ''}"`);
+  
+  // For non-instrumental tracks, lyrics go in the prompt field
+  // For instrumental tracks, we'll use an empty string
+  const promptContent = instrumental ? "" : lyrics;
+  
+  console.log(`[SUNO] Prompt/Lyrics: "${promptContent.substring(0, 100)}${promptContent.length > 100 ? '...' : ''}"`);
+  console.log(`[SUNO] Style: "${style.substring(0, 100)}${style.length > 100 ? '...' : ''}"`);
   
   const requestBody: SunoGenerateRequest = {
-    prompt,
+    prompt: promptContent,
     style,
     title,
     customMode: true,
     instrumental,
-    model: 'V4_5',
+    model: 'V4_5',  // Always use V4_5
     callBackUrl: finalCallbackUrl
   };
   

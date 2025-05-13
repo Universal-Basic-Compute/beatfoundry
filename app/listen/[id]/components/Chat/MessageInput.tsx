@@ -35,7 +35,9 @@ export default function MessageInput({
             type="text"
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
-            placeholder="Type your message..."
+            placeholder={instrumental 
+              ? "Describe the music style, mood, and instrumentation..." 
+              : "Enter lyrics for the track (these will be sung exactly as written)..."}
             className="flex-1 p-4 bg-background text-foreground focus:outline-none"
             disabled={sending}
           />

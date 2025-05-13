@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import MessageList from './MessageList';
 import MessageInput from './MessageInput';
 import OptionsMenu from '../OptionsMenu';
@@ -40,6 +40,8 @@ type ChatProps = {
 };
 
 export default function Chat({
+
+export default function Chat({
   foundry,
   messages,
   newMessage,
@@ -59,6 +61,7 @@ export default function Chat({
   createTrack,
   createTrackFromThinking
 }: ChatProps) {
+  const [showModelNotification, setShowModelNotification] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   // Scroll to bottom when messages or thoughts change
@@ -129,6 +132,31 @@ export default function Chat({
           )}
         </div>
       </div>
+      
+      {showModelNotification && (
+        <div className="bg-primary/10 border-l-4 border-primary p-4 mx-6 mb-4 rounded-r-lg animate-fadeIn">
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="font-bold text-primary">New Suno V4_5 Model Available!</h3>
+              <p className="text-sm mt-1">
+                <strong>For tracks with lyrics:</strong> Your prompt will be used as the exact lyrics to be sung (up to 5000 characters).
+              </p>
+              <p className="text-sm mt-1">
+                <strong>For all tracks:</strong> The style description can be up to 1000 characters, describing the musical style, sonorities, and emotions.
+              </p>
+            </div>
+            <button 
+              onClick={() => setShowModelNotification(false)}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
       
       {error && (
         <div className="bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 p-3 mx-6 rounded-lg mb-4">

@@ -29,7 +29,9 @@ export default function OptionsMenu({
             </button>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            {instrumental ? 'Generate music without lyrics' : 'Generate music with lyrics'}
+            {instrumental 
+              ? 'Generate instrumental music without lyrics' 
+              : 'Generate music with lyrics - your prompt will be used as the exact lyrics to be sung'}
           </p>
         </div>
         
