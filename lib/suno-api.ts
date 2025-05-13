@@ -6,7 +6,7 @@ type SunoGenerateRequest = {
   title?: string;
   customMode: boolean;
   instrumental: boolean;
-  model: 'V3_5' | 'V4';
+  model: 'V4_5' | 'V4';
   negativeTags?: string;
   callBackUrl: string;
 };
@@ -49,7 +49,7 @@ export async function generateMusic(
     title,
     customMode: true,
     instrumental,
-    model: 'V4',
+    model: 'V4_5',
     callBackUrl: finalCallbackUrl
   };
   
