@@ -73,19 +73,29 @@ export default function MusicPlayer({
             });
           }
           
-          // Play only if isPlaying is true
+          // Play only if isPlaying is true, but use a more reliable approach
           if (isPlaying) {
-            // Add a small delay to ensure any pause operations have completed
-            setTimeout(async () => {
+            // Use a separate function for playing to avoid race conditions
+            const playAudio = async () => {
+              // Double-check that we still want to play before attempting
               if (audioRef.current && isPlaying) {
                 try {
-                  await audioRef.current.play();
+                  // Use a flag to track if we're in the middle of playing
+                  let playPromise = audioRef.current.play();
+                  
+                  // If the play() method returns a promise (modern browsers)
+                  if (playPromise !== undefined) {
+                    await playPromise;
+                  }
                 } catch (err) {
                   console.error('Error playing audio:', err);
                   setIsPlaying(false);
                 }
               }
-            }, 50);
+            };
+            
+            // Add a small delay to ensure any pause operations have completed
+            setTimeout(playAudio, 100);
           }
         } catch (err) {
           console.error('Error loading audio:', err);
@@ -129,11 +139,19 @@ export default function MusicPlayer({
     
     // First pause the current audio if it's playing
     if (audioRef.current) {
-      audioRef.current.pause();
+      // Make sure we're not in the middle of a play operation
+      try {
+        audioRef.current.pause();
+      } catch (err) {
+        console.error('Error pausing audio:', err);
+      }
       
       // Reset the src to empty before setting a new one
-      // This helps prevent the "interrupted by a new load request" error
-      audioRef.current.src = '';
+      try {
+        audioRef.current.src = '';
+      } catch (err) {
+        console.error('Error resetting audio src:', err);
+      }
     }
     
     // Then update the current track
@@ -146,11 +164,22 @@ export default function MusicPlayer({
   const togglePlayPause = () => {
     if (audioRef.current) {
       if (isPlaying) {
-        audioRef.current.pause();
+        try {
+          audioRef.current.pause();
+        } catch (err) {
+          console.error('Error pausing audio:', err);
+        }
       } else {
-        audioRef.current.play().catch(err => {
+        try {
+          const playPromise = audioRef.current.play();
+          if (playPromise !== undefined) {
+            playPromise.catch(err => {
+              console.error('Error playing audio:', err);
+            });
+          }
+        } catch (err) {
           console.error('Error playing audio:', err);
-        });
+        }
       }
       setIsPlaying(!isPlaying);
     }
