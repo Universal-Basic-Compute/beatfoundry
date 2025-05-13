@@ -40,7 +40,8 @@ export async function POST(request: NextRequest, { params }: any) {
         'Authorization': `Bearer ${process.env.KINOS_API_KEY}`,
       },
       body: JSON.stringify({
-        prompt: prompt,
+        message: prompt, // Add the message field with the prompt value
+        prompt: prompt,  // Keep the prompt field for backward compatibility
         aspect_ratio: "ASPECT_1_1",
         model: "V_2A",
         magic_prompt_option: "AUTO"
