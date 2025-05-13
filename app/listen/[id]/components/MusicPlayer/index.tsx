@@ -50,42 +50,28 @@ export default function MusicPlayer({
   const [currentTime, setCurrentTime] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   
-  // Add a separate effect to handle src changes when currentTrack changes
+  // Simplify track source management
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio || !currentTrack) return;
 
-    // Only update the src if it's different
+    // Only update the source if it's different
     if (audio.src !== currentTrack.url) {
-      console.log(`Changing audio source to: ${currentTrack.url}`);
-      
-      // Pause first before changing source
+      // Always pause before changing source
       audio.pause();
-      
-      // Reset playback position
-      audio.currentTime = 0;
-      
-      // Change the source
       audio.src = currentTrack.url;
       
-      // Load the new audio
-      audio.load();
-      
-      // If isPlaying is true, play the audio after a short delay
+      // If isPlaying is true, attempt to play after source change
       if (isPlaying) {
-        const playTimeout = setTimeout(() => {
-          try {
-            audio.play().catch(err => {
-              console.error('Error playing audio:', err);
-              setIsPlaying(false);
-            });
-          } catch (err) {
+        // Use a timeout to avoid race conditions
+        const playTimer = setTimeout(() => {
+          audio.play().catch(err => {
             console.error('Error playing audio:', err);
             setIsPlaying(false);
-          }
-        }, 100);
+          });
+        }, 50);
         
-        return () => clearTimeout(playTimeout);
+        return () => clearTimeout(playTimer);
       }
     }
   }, [currentTrack, isPlaying]);
@@ -109,32 +95,19 @@ export default function MusicPlayer({
     setIsPlaying(true);
   }, [tracks, currentTrack, setCurrentTrack, setIsPlaying]);
 
-  // Set up event listeners for audio events
+  // Simplify event listeners for audio events
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
-    // Set up event listeners for audio events
-    const handlePlay = () => {
-      console.log('Audio started playing');
-      setIsPlaying(true);
-      setIsLoading(false);
-    };
-
-    const handlePause = () => {
-      console.log('Audio paused');
-      setIsPlaying(false);
-      setIsLoading(false);
-    };
-
+    // Simple event listeners for basic state tracking
+    const handlePlay = () => setIsPlaying(true);
+    const handlePause = () => setIsPlaying(false);
     const handleEnded = () => {
-      console.log('Audio playback ended');
       setIsPlaying(false);
       playNextTrack();
     };
-
-    const handleError = (e) => {
-      console.error('Audio error:', e);
+    const handleError = () => {
       setIsPlaying(false);
       setIsLoading(false);
     };
@@ -183,19 +156,11 @@ export default function MusicPlayer({
     
     if (isPlaying) {
       audio.pause();
-    } else {
-      // Only attempt to play if we have a current track
-      if (currentTrack) {
-        try {
-          audio.play().catch(err => {
-            console.error('Error playing audio:', err);
-            setIsPlaying(false);
-          });
-        } catch (err) {
-          console.error('Error playing audio:', err);
-          setIsPlaying(false);
-        }
-      }
+    } else if (currentTrack) {
+      audio.play().catch(err => {
+        console.error('Error playing audio:', err);
+        setIsPlaying(false);
+      });
     }
   };
   
