@@ -52,23 +52,34 @@ export default function MusicPlayer({
   // Handle audio playback
   useEffect(() => {
     if (currentTrack && audioRef.current) {
-      // Only set the src if it's different from the current src
-      if (audioRef.current.src !== currentTrack.url) {
-        audioRef.current.src = currentTrack.url;
-      }
+      // Create a function to handle the loading and playing
+      const loadAndPlay = async () => {
+        try {
+          // Only set the src if it's different from the current src
+          if (audioRef.current.src !== currentTrack.url) {
+            // First pause and reset
+            audioRef.current.pause();
+            
+            // Set the new source
+            audioRef.current.src = currentTrack.url;
+            
+            // Wait for the audio to be loaded before playing
+            await new Promise(resolve => {
+              audioRef.current.addEventListener('canplay', resolve, { once: true });
+            });
+          }
+          
+          // Play only if isPlaying is true
+          if (isPlaying) {
+            await audioRef.current.play();
+          }
+        } catch (err) {
+          console.error('Error playing audio:', err);
+          setIsPlaying(false);
+        }
+      };
       
-      // Play only if isPlaying is true
-      if (isPlaying) {
-        // Use a small timeout to ensure the src is fully loaded
-        const playPromise = setTimeout(() => {
-          audioRef.current?.play().catch(err => {
-            console.error('Error playing audio:', err);
-            setIsPlaying(false);
-          });
-        }, 50);
-        
-        return () => clearTimeout(playPromise);
-      }
+      loadAndPlay();
     }
   }, [currentTrack, isPlaying]);
   
@@ -95,6 +106,10 @@ export default function MusicPlayer({
     // First pause the current audio if it's playing
     if (audioRef.current) {
       audioRef.current.pause();
+      
+      // Reset the src to empty before setting a new one
+      // This helps prevent the "interrupted by a new load request" error
+      audioRef.current.src = '';
     }
     
     // Then update the current track
