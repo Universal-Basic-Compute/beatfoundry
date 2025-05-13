@@ -40,8 +40,6 @@ type ChatProps = {
 };
 
 export default function Chat({
-
-export default function Chat({
   foundry,
   messages,
   newMessage,
