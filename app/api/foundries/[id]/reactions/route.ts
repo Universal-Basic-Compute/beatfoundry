@@ -3,7 +3,7 @@ import { getFoundryReactions, updateFoundryReactions, FoundryReactions } from '@
 
 // Get reactions for a foundry
 export async function GET(request: NextRequest, { params }: any) {
-  const { id: foundryId } = params;
+  const { id: foundryId } = await params;
   
   console.log(`[REACTIONS] Getting reactions for foundry ID: ${foundryId}`);
   
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest, { params }: any) {
 
 // Add or update a reaction for a foundry
 export async function POST(request: NextRequest, { params }: any) {
-  const { id: foundryId } = params;
+  const { id: foundryId } = await params;
   
   console.log(`[REACTIONS] Adding/updating reaction for foundry ID: ${foundryId}`);
   

@@ -3,7 +3,7 @@ import { getTrackReactions, updateTrackReactions, TrackReactions } from '@/lib/a
 
 // Get reactions for a track
 export async function GET(request: NextRequest, { params }: any) {
-  const { trackId } = params;
+  const { trackId } = await params;
   
   console.log(`[REACTIONS] Getting reactions for track ID: ${trackId}`);
   
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest, { params }: any) {
 
 // Add or update a reaction for a track
 export async function POST(request: NextRequest, { params }: any) {
-  const { trackId } = params;
+  const { trackId } = await params;
   
   console.log(`[REACTIONS] Adding/updating reaction for track ID: ${trackId}`);
   

@@ -4,7 +4,7 @@ import { createTrack, updateTrackByTaskId } from '@/lib/airtable';
 
 // This endpoint will receive callbacks from SUNO API when music generation is complete
 export async function POST(request, { params }) {
-  const { id: foundryId } = params;
+  const { id: foundryId } = await params;
   console.log(`[CALLBACK] Received SUNO API callback for foundry ID: ${foundryId}`);
   console.log(`[CALLBACK] Request URL: ${request.url}`);
   console.log(`[CALLBACK] Request headers:`, JSON.stringify(Object.fromEntries([...request.headers.entries()]), null, 2));

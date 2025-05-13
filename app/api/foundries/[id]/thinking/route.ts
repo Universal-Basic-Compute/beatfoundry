@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { triggerAutonomousThinking } from '@/lib/kinos-messages-api';
 
 export async function POST(request, { params }) {
-  const { id: foundryId } = params;
+  const { id: foundryId } = await params;
   console.log(`[THINKING] Triggering autonomous thinking for foundry ID: ${foundryId}`);
   
   try {

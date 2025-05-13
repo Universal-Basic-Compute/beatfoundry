@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import thinkingEvents from '@/lib/thinking-events';
 
 export async function POST(request: NextRequest, { params }: any) {
-  const { id: foundryId } = params;
+  const { id: foundryId } = await params;
   console.log(`[WEBHOOK] Received thinking webhook for foundry ID: ${foundryId}`);
   
   try {
