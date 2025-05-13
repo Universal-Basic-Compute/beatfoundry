@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest, { params }: any) {
-  const { id: foundryId } = params;
+  const { id: foundryId } = await params;
   const url = new URL(request.url);
   const taskId = url.searchParams.get('taskId');
   
