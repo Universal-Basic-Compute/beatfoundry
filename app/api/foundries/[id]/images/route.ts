@@ -5,7 +5,7 @@ import { mkdir } from 'fs/promises';
 import { updateTrackCover } from '@/lib/airtable';
 
 export async function POST(request: NextRequest, { params }: any) {
-  const { id: foundryId } = params;
+  const { id: foundryId } = await params;
   
   console.log(`[IMAGES] Generating cover image for foundry ID: ${foundryId}`);
   
