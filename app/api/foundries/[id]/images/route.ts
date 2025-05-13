@@ -71,15 +71,24 @@ export async function POST(request: NextRequest, { params }: any) {
     console.log(`[IMAGES] Image generation response:`, JSON.stringify(imageData, null, 2));
     
     // Extract the image URL
-    const imageUrl = imageData.data?.url;
-    
-    if (!imageUrl) {
+    let imageUrl;
+
+    // Check for different possible response structures
+    if (imageData.data?.url) {
+      // Original expected structure
+      imageUrl = imageData.data.url;
+    } else if (imageData.result?.data && Array.isArray(imageData.result.data) && imageData.result.data.length > 0) {
+      // New structure from the logs
+      imageUrl = imageData.result.data[0].url;
+    } else {
       console.error(`[IMAGES] No image URL found in response:`, JSON.stringify(imageData, null, 2));
       return NextResponse.json(
         { error: 'No image URL found in response' },
         { status: 500 }
       );
     }
+    
+    console.log(`[IMAGES] Successfully extracted image URL: ${imageUrl}`);
     
     // Create directory if it doesn't exist
     const coversDir = path.join(process.cwd(), 'public', 'images', 'covers');
