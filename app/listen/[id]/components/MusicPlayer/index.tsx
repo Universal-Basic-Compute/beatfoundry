@@ -75,6 +75,25 @@ export default function MusicPlayer({
     }
   }, [currentTrack]);
 
+  // Define playNextTrack and playPreviousTrack functions first
+  const playNextTrack = useCallback(() => {
+    if (tracks.length === 0 || !currentTrack) return;
+    
+    const currentIndex = tracks.findIndex(track => track.id === currentTrack.id);
+    const nextIndex = (currentIndex + 1) % tracks.length;
+    setCurrentTrack(tracks[nextIndex]);
+    setIsPlaying(true);
+  }, [tracks, currentTrack, setCurrentTrack, setIsPlaying]);
+
+  const playPreviousTrack = useCallback(() => {
+    if (tracks.length === 0 || !currentTrack) return;
+    
+    const currentIndex = tracks.findIndex(track => track.id === currentTrack.id);
+    const prevIndex = (currentIndex - 1 + tracks.length) % tracks.length;
+    setCurrentTrack(tracks[prevIndex]);
+    setIsPlaying(true);
+  }, [tracks, currentTrack, setCurrentTrack, setIsPlaying]);
+
   // Handle audio playback with event listeners
   useEffect(() => {
     const audio = audioRef.current;
@@ -186,25 +205,6 @@ export default function MusicPlayer({
       }
     }
   };
-
-  // Update the playNextTrack and playPreviousTrack functions
-  const playNextTrack = useCallback(() => {
-    if (tracks.length === 0 || !currentTrack) return;
-    
-    const currentIndex = tracks.findIndex(track => track.id === currentTrack.id);
-    const nextIndex = (currentIndex + 1) % tracks.length;
-    setCurrentTrack(tracks[nextIndex]);
-    setIsPlaying(true);
-  }, [tracks, currentTrack]);
-
-  const playPreviousTrack = useCallback(() => {
-    if (tracks.length === 0 || !currentTrack) return;
-    
-    const currentIndex = tracks.findIndex(track => track.id === currentTrack.id);
-    const prevIndex = (currentIndex - 1 + tracks.length) % tracks.length;
-    setCurrentTrack(tracks[prevIndex]);
-    setIsPlaying(true);
-  }, [tracks, currentTrack]);
   
   // Format time in MM:SS format
   const formatTime = (time: number) => {
