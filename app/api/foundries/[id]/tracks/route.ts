@@ -210,8 +210,13 @@ export async function POST(request, { params }) {
       console.log(`[TRACKS] Callback URL for SUNO API: ${callbackUrl}`);
       
       console.log(`[TRACKS] Calling SUNO API to generate music`);
+      if (!musicParams) {
+        console.error(`[TRACKS] Error: musicParams is undefined`);
+        throw new Error('Failed to parse music parameters');
+      }
+      
       musicResponse = await generateMusic(
-        musicParams.lyrics || musicParams.prompt, // Use lyrics if available, otherwise use prompt
+        musicParams.prompt || musicParams.lyrics, // Use prompt if available, otherwise use lyrics
         musicParams.style,
         musicParams.title,
         instrumental, // Pass the instrumental parameter
@@ -303,12 +308,12 @@ export async function POST(request, { params }) {
     const responseData = {
       ...messageResponse,
       music_task_id: musicResponse?.data?.task_id || musicResponse?.data?.taskId,
-      music_parameters: {
+      music_parameters: musicParams ? {
         prompt: musicParams.prompt,
         style: musicParams.style,
         title: musicParams.title,
         lyrics: musicParams.lyrics
-      }
+      } : null
     };
     
     console.log(`[TRACKS] Returning response to client:`, responseData);
