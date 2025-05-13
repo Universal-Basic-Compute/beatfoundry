@@ -155,8 +155,11 @@ export async function POST(request, { params }) {
       console.log(`[TRACKS] Parsed music parameters:`, musicParams);
       
       // Validate the required fields
-      if (!musicParams.prompt || !musicParams.style || !musicParams.title) {
+      if (!musicParams.title || !musicParams.style || !musicParams.prompt) {
         console.log(`[TRACKS] Error: Missing required music parameters`);
+        console.log(`[TRACKS] - Title: ${musicParams.title ? 'Present' : 'Missing'}`);
+        console.log(`[TRACKS] - Style: ${musicParams.style ? 'Present' : 'Missing'}`);
+        console.log(`[TRACKS] - Prompt: ${musicParams.prompt ? 'Present' : 'Missing'}`);
         throw new Error('Missing required music parameters');
       }
       
