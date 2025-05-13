@@ -177,9 +177,10 @@ export async function POST(request: NextRequest, { params }: any) {
           
           console.log(`[SAVE-STATUS] Cover image prompt: "${coverPrompt}"`);
           
-          // Determine the base URL for the API call
-          const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 
-                        (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://beatfoundry.vercel.app');
+          // Get the base URL from the request
+          const host = request.headers.get('host') || 'localhost:3001';
+          const protocol = host.includes('localhost') ? 'http' : 'https';
+          const baseUrl = `${protocol}://${host}`;
           
           const coverResponse = await fetch(`${baseUrl}/api/foundries/${foundryId}/images`, {
             method: 'POST',
