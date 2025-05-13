@@ -52,11 +52,22 @@ export default function MusicPlayer({
   // Handle audio playback
   useEffect(() => {
     if (currentTrack && audioRef.current) {
-      audioRef.current.src = currentTrack.url;
+      // Only set the src if it's different from the current src
+      if (audioRef.current.src !== currentTrack.url) {
+        audioRef.current.src = currentTrack.url;
+      }
+      
+      // Play only if isPlaying is true
       if (isPlaying) {
-        audioRef.current.play().catch(err => {
-          console.error('Error playing audio:', err);
-        });
+        // Use a small timeout to ensure the src is fully loaded
+        const playPromise = setTimeout(() => {
+          audioRef.current?.play().catch(err => {
+            console.error('Error playing audio:', err);
+            setIsPlaying(false);
+          });
+        }, 50);
+        
+        return () => clearTimeout(playPromise);
       }
     }
   }, [currentTrack, isPlaying]);
@@ -81,7 +92,15 @@ export default function MusicPlayer({
   }, []);
   
   const playTrack = (track: Track) => {
+    // First pause the current audio if it's playing
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
+    
+    // Then update the current track
     setCurrentTrack(track);
+    
+    // Set isPlaying to true - the useEffect will handle the actual playback
     setIsPlaying(true);
   };
   
