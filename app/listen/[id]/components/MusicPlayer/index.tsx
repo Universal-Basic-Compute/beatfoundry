@@ -65,21 +65,39 @@ export default function MusicPlayer({
             
             // Wait for the audio to be loaded before playing
             await new Promise(resolve => {
-              audioRef.current.addEventListener('canplay', resolve, { once: true });
+              const canPlayHandler = () => {
+                resolve(true);
+                audioRef.current?.removeEventListener('canplay', canPlayHandler);
+              };
+              audioRef.current.addEventListener('canplay', canPlayHandler);
             });
           }
           
           // Play only if isPlaying is true
           if (isPlaying) {
-            await audioRef.current.play();
+            // Add a small delay to ensure any pause operations have completed
+            setTimeout(async () => {
+              if (audioRef.current && isPlaying) {
+                try {
+                  await audioRef.current.play();
+                } catch (err) {
+                  console.error('Error playing audio:', err);
+                  setIsPlaying(false);
+                }
+              }
+            }, 50);
           }
         } catch (err) {
-          console.error('Error playing audio:', err);
+          console.error('Error loading audio:', err);
           setIsPlaying(false);
         }
       };
       
       loadAndPlay();
+    } else if (!currentTrack && audioRef.current) {
+      // If there's no current track, pause and reset the audio
+      audioRef.current.pause();
+      audioRef.current.src = '';
     }
   }, [currentTrack, isPlaying]);
   
@@ -103,6 +121,12 @@ export default function MusicPlayer({
   }, []);
   
   const playTrack = (track: Track) => {
+    // If we're already playing this track, just toggle play/pause
+    if (currentTrack && currentTrack.id === track.id) {
+      togglePlayPause();
+      return;
+    }
+    
     // First pause the current audio if it's playing
     if (audioRef.current) {
       audioRef.current.pause();
