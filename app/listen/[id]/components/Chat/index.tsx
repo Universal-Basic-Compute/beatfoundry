@@ -183,6 +183,7 @@ export default function Chat({
           handleSendMessage={handleSendMessage}
           handleCreateTrack={handleCreateTrack}
           sending={sending}
+          instrumental={instrumental}
         />
       </div>
     </div>

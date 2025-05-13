@@ -6,6 +6,7 @@ type MessageInputProps = {
   handleSendMessage: (e: React.FormEvent) => void;
   handleCreateTrack: () => void;
   sending: boolean;
+  instrumental: boolean;
 };
 
 export default function MessageInput({ 
@@ -13,7 +14,8 @@ export default function MessageInput({
   setNewMessage, 
   handleSendMessage, 
   handleCreateTrack, 
-  sending 
+  sending,
+  instrumental
 }: MessageInputProps) {
   const [createButtonText, setCreateButtonText] = useState('Create Track');
   
