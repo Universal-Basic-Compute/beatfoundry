@@ -37,7 +37,7 @@ async function checkMusicGenerationStatus(taskId: string) {
 
 // Add a GET method to fetch tracks
 export async function GET(request, { params }) {
-  const { id: foundryId } = params;
+  const { id: foundryId } = await params;
   
   try {
     const tracks = await getTracksByFoundryId(foundryId);
@@ -77,7 +77,7 @@ export async function GET(request, { params }) {
 }
 
 export async function POST(request, { params }) {
-  const { id: foundryId } = params;
+  const { id: foundryId } = await params;
   console.log(`[TRACKS] Starting track creation for foundry ID: ${foundryId}`);
   
   const body = await request.json();
