@@ -148,28 +148,36 @@ export default function MusicPlayer({
     
     console.log(`[PLAYER] Setting audio source to: ${currentTrack.url}`);
     
-    // Set the src attribute directly
+    // Set the src attribute and load the audio
     audioRef.current.src = currentTrack.url;
-    audioRef.current.load(); // Explicitly load the audio
+    audioRef.current.load();
     
-    // If isPlaying is true, attempt to play
+    // If isPlaying is true, attempt to play after a short delay
     if (isPlaying) {
       console.log(`[PLAYER] Auto-playing track: ${currentTrack.name}`);
-      // Use a small timeout to ensure the audio is loaded
+      
+      // Use a timeout to ensure the audio has time to load
       const playTimer = setTimeout(() => {
         if (audioRef.current) {
-          console.log(`[PLAYER] Attempting to play audio`);
-          audioRef.current.play()
-            .then(() => {
-              console.log(`[PLAYER] Audio playback started successfully`);
-            })
-            .catch(err => {
-              console.error('[PLAYER] Error playing audio:', err);
-              setIsPlaying(false);
-              setIsAudioLoading(false);
-            });
+          console.log(`[PLAYER] Attempting to play audio after delay`);
+          
+          // Use the play() method directly
+          const playPromise = audioRef.current.play();
+          
+          // Handle the play promise
+          if (playPromise !== undefined) {
+            playPromise
+              .then(() => {
+                console.log(`[PLAYER] Audio playback started successfully`);
+              })
+              .catch(err => {
+                console.error('[PLAYER] Error playing audio:', err);
+                setIsPlaying(false);
+                setIsAudioLoading(false);
+              });
+          }
         }
-      }, 300); // Increase timeout to 300ms to ensure audio is ready
+      }, 500); // Increase timeout to 500ms to ensure audio is ready
       
       return () => clearTimeout(playTimer);
     }
@@ -207,14 +215,20 @@ export default function MusicPlayer({
     if (isPlaying) {
       console.log(`[PLAYER] Pausing audio`);
       audioRef.current.pause();
+      setIsPlaying(false);
     } else {
       console.log(`[PLAYER] Attempting to play audio`);
-      // Only try to play if we're not already loading
-      if (!isAudioLoading) {
-        setIsAudioLoading(true); // Set loading state before attempting to play
-        audioRef.current.play()
+      
+      // Use the play() method directly
+      setIsAudioLoading(true);
+      const playPromise = audioRef.current.play();
+      
+      // Handle the play promise
+      if (playPromise !== undefined) {
+        playPromise
           .then(() => {
             console.log(`[PLAYER] Audio playback started successfully`);
+            setIsPlaying(true);
             setIsAudioLoading(false);
           })
           .catch(err => {
@@ -345,10 +359,15 @@ export default function MusicPlayer({
             {/* Hidden audio element */}
             <audio 
               ref={audioRef}
-              preload="auto" // Add preload attribute
+              preload="auto"
               onTimeUpdate={() => setCurrentTime(audioRef.current?.currentTime || 0)}
               onDurationChange={() => setDuration(audioRef.current?.duration || 0)}
               onLoadedMetadata={() => setDuration(audioRef.current?.duration || 0)}
+              onEnded={() => {
+                console.log('[PLAYER] Audio playback ended');
+                setIsPlaying(false);
+                playNextTrack();
+              }}
             />
           </div>
         )}
