@@ -10,6 +10,7 @@ type PlayerControlsProps = {
   playPreviousTrack: () => void;
   playNextTrack: () => void;
   currentTrack: any | null;
+  isAudioLoading: boolean;
 };
 
 export default function PlayerControls({
@@ -21,7 +22,8 @@ export default function PlayerControls({
   togglePlayPause,
   playPreviousTrack,
   playNextTrack,
-  currentTrack
+  currentTrack,
+  isAudioLoading
 }: PlayerControlsProps) {
   return (
     <div className="mt-6">
@@ -62,7 +64,9 @@ export default function PlayerControls({
           className="p-5 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground transition-colors shadow-md"
           disabled={!currentTrack}
         >
-          {isPlaying ? (
+          {isAudioLoading ? (
+            <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+          ) : isPlaying ? (
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="6" y="4" width="4" height="16"></rect>
               <rect x="14" y="4" width="4" height="16"></rect>
