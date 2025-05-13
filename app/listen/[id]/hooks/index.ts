@@ -148,7 +148,7 @@ export function useTracks(foundryId: string) {
         clearInterval(interval);
       });
     };
-  }, [foundryId, currentTrack]);
+  }, [foundryId]); // Removed currentTrack from dependencies to prevent unnecessary reloads
   
   // Function to add a reaction to a track
   const addReaction = async (trackId: string, reaction: string) => {
