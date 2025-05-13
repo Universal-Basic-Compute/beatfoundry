@@ -71,9 +71,24 @@ export default function MusicPlayer({
       // Load the new audio
       audio.load();
       
-      // If isPlaying is true, the canplay event will trigger playback
+      // If isPlaying is true, play the audio after a short delay
+      if (isPlaying) {
+        const playTimeout = setTimeout(() => {
+          try {
+            audio.play().catch(err => {
+              console.error('Error playing audio:', err);
+              setIsPlaying(false);
+            });
+          } catch (err) {
+            console.error('Error playing audio:', err);
+            setIsPlaying(false);
+          }
+        }, 100);
+        
+        return () => clearTimeout(playTimeout);
+      }
     }
-  }, [currentTrack]);
+  }, [currentTrack, isPlaying]);
 
   // Define playNextTrack and playPreviousTrack functions first
   const playNextTrack = useCallback(() => {
@@ -94,38 +109,12 @@ export default function MusicPlayer({
     setIsPlaying(true);
   }, [tracks, currentTrack, setCurrentTrack, setIsPlaying]);
 
-  // Handle audio playback with event listeners
+  // Set up event listeners for audio events
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
-    // Function to handle play attempts with proper error handling
-    const attemptPlay = async () => {
-      try {
-        if (isPlaying && !isLoading) {
-          setIsLoading(true);
-          await audio.play();
-          setIsLoading(false);
-        }
-      } catch (err) {
-        console.error('Error playing audio:', err);
-        setIsPlaying(false);
-        setIsLoading(false);
-      }
-    };
-
-    // Set up event listeners
-    const handleCanPlay = () => {
-      console.log('Audio can play now');
-      attemptPlay();
-    };
-
-    const handleEnded = () => {
-      console.log('Audio playback ended');
-      setIsPlaying(false);
-      playNextTrack();
-    };
-
+    // Set up event listeners for audio events
     const handlePlay = () => {
       console.log('Audio started playing');
       setIsPlaying(true);
@@ -135,6 +124,13 @@ export default function MusicPlayer({
     const handlePause = () => {
       console.log('Audio paused');
       setIsPlaying(false);
+      setIsLoading(false);
+    };
+
+    const handleEnded = () => {
+      console.log('Audio playback ended');
+      setIsPlaying(false);
+      playNextTrack();
     };
 
     const handleError = (e) => {
@@ -147,10 +143,9 @@ export default function MusicPlayer({
     const updateDuration = () => setDuration(audio.duration);
 
     // Add event listeners
-    audio.addEventListener('canplay', handleCanPlay);
-    audio.addEventListener('ended', handleEnded);
     audio.addEventListener('play', handlePlay);
     audio.addEventListener('pause', handlePause);
+    audio.addEventListener('ended', handleEnded);
     audio.addEventListener('error', handleError);
     audio.addEventListener('timeupdate', updateTime);
     audio.addEventListener('durationchange', updateDuration);
@@ -158,18 +153,17 @@ export default function MusicPlayer({
 
     // Clean up event listeners
     return () => {
-      audio.removeEventListener('canplay', handleCanPlay);
-      audio.removeEventListener('ended', handleEnded);
       audio.removeEventListener('play', handlePlay);
       audio.removeEventListener('pause', handlePause);
+      audio.removeEventListener('ended', handleEnded);
       audio.removeEventListener('error', handleError);
       audio.removeEventListener('timeupdate', updateTime);
       audio.removeEventListener('durationchange', updateDuration);
       audio.removeEventListener('loadedmetadata', updateDuration);
     };
-  }, [isPlaying, isLoading, playNextTrack]);
+  }, [playNextTrack]);
   
-  // Completely rewrite the playTrack function
+  // Simplify the playTrack function
   const playTrack = (track: Track) => {
     // If we're already playing this track, just toggle play/pause
     if (currentTrack && currentTrack.id === track.id) {
@@ -182,26 +176,25 @@ export default function MusicPlayer({
     setIsPlaying(true);
   };
 
-  // Rewrite the togglePlayPause function
+  // Simplify the togglePlayPause function
   const togglePlayPause = () => {
     const audio = audioRef.current;
     if (!audio) return;
     
     if (isPlaying) {
-      console.log('Pausing audio');
       audio.pause();
-      // setIsPlaying will be updated by the pause event listener
     } else {
-      console.log('Attempting to play audio');
-      // Only attempt to play if we're not already loading
-      if (!isLoading) {
-        setIsLoading(true);
-        audio.play().catch(err => {
+      // Only attempt to play if we have a current track
+      if (currentTrack) {
+        try {
+          audio.play().catch(err => {
+            console.error('Error playing audio:', err);
+            setIsPlaying(false);
+          });
+        } catch (err) {
           console.error('Error playing audio:', err);
           setIsPlaying(false);
-          setIsLoading(false);
-        });
-        // setIsPlaying will be updated by the play event listener
+        }
       }
     }
   };
