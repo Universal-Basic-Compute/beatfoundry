@@ -172,16 +172,44 @@ export default function MusicPlayer({
               })
               .catch(err => {
                 console.error('[PLAYER] Error playing audio:', err);
+                // Important: Set isPlaying to false if autoplay fails due to browser policies
                 setIsPlaying(false);
                 setIsAudioLoading(false);
               });
           }
         }
-      }, 500); // Increase timeout to 500ms to ensure audio is ready
+      }, 1000); // Increase timeout to 1000ms to ensure audio is ready
       
       return () => clearTimeout(playTimer);
     }
   }, [currentTrack, isPlaying]);
+  
+  // Add a user interaction handler to help with browser autoplay restrictions
+  const handleUserInteraction = useCallback(() => {
+    // This function will be called on the first user interaction with the page
+    // It helps overcome browser autoplay restrictions
+    if (audioRef.current && currentTrack && !isPlaying) {
+      console.log('[PLAYER] User interaction detected, enabling audio playback');
+      // Don't automatically play, just prepare the audio context
+      audioRef.current.load();
+    }
+  }, [currentTrack, isPlaying]);
+
+  // Add an effect to set up the user interaction listener
+  useEffect(() => {
+    // Add event listeners for user interaction
+    const interactionEvents = ['click', 'touchstart', 'keydown'];
+    
+    interactionEvents.forEach(event => {
+      document.addEventListener(event, handleUserInteraction, { once: true });
+    });
+    
+    return () => {
+      interactionEvents.forEach(event => {
+        document.removeEventListener(event, handleUserInteraction);
+      });
+    };
+  }, [handleUserInteraction]);
   
   // Simplify the playTrack function
   const playTrack = (track: Track) => {
@@ -320,6 +348,20 @@ export default function MusicPlayer({
                   {/* Add a spinning animation when playing */}
                   {isPlaying && (
                     <div className="absolute inset-0 border-4 border-primary/30 border-t-primary rounded-full animate-spin" style={{ animationDuration: '4s' }}></div>
+                  )}
+                  {/* Add a "Click to play" overlay for the initial state */}
+                  {currentTrack && !isPlaying && (
+                    <div 
+                      onClick={togglePlayPause}
+                      className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full cursor-pointer z-10"
+                    >
+                      <div className="bg-primary text-primary-foreground p-3 rounded-full shadow-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                        </svg>
+                      </div>
+                      <span className="absolute bottom-0 mb-2 text-xs text-white font-medium">Click to play</span>
+                    </div>
                   )}
                 </div>
                 
